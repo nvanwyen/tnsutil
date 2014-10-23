@@ -1,8 +1,12 @@
 #!/bin/bash
 
 #
+proj="TNS*Util"
+tgts="bin/tns2ldif bin/ldif2tns bin/tns2ldap bin/ldap2tns"
+
+#
 args=$@
-proj=`dirname $0`
+root=`dirname $0`
 
 #
 function color_echo()
@@ -67,9 +71,9 @@ function chkproj()
         prj=`grep "name: "    ${dir}/VERSION | awk -F ":" '{print $2}' | tr -d ' '`
         ver=`grep "version: " ${dir}/VERSION | awk -F ":" '{print $2}' | tr -d ' '`
 
-        if [ "${prj}" != "TNS*Util" ] ; then
+        if [ "${prj}" != "${proj}" ] ; then
 
-            color_echo red "Cannot confirm project version name \"TNS*Util\""
+            color_echo red "Cannot confirm project version name \"${proj}\""
             exit 1
 
         fi
@@ -85,14 +89,47 @@ function chkproj()
 
     else
 
-        color_echo red "This does not appear to be a TNS-Util project!"
+        color_echo red "This does not appear to be a ${proj} project!"
         exit 1
 
     fi
 }
 
 #
-cd $proj
+function clean()
+{
+    for t in ${tgts} ; do
+
+        if [ -f ${dir}/${t} ] ; then
+
+            color_echo red "Removing previous ${t}"
+            rm -f ${dir}/${t} 2>/dev/null
+
+        fi
+
+    done
+}
+
+#
+function validate()
+{
+    for t in ${tgts} ; do
+
+        if [ -f ${dir}/${t} ] ; then
+        
+            color_echo magenta "Found: ${t}" 
+        
+        else
+        
+            color_echo red "Not found: ${t}"
+        
+        fi
+
+    done
+}
+
+#
+cd $root
 chkrc $?
 
 dir=`pwd`
@@ -103,48 +140,16 @@ chkproj
 #
 if [ "$args" = "" ] ; then
 
-    if [ -f ${dir}/bin/tns2ldif ] ; then
-   
-        color_echo red "Removing previous bin/tns2ldif" 
-        rm -f ${dir}/bin/tns2ldif
-    
-    fi
-    
-    
-    if [ -f ${dir}/bin/ldif2tns ] ; then
-   
-        color_echo red "Removing previous bin/ldif2tns" 
-        rm -f ${dir}/bin/ldif2tns
-    
-    fi
-    
-
-    if [ -f ${dir}/bin/tns2ldap ] ; then
-   
-        color_echo red "Removing previous bin/tns2ldap" 
-        rm -f ${dir}/bin/tns2ldif
-    
-    fi
-    
-    
-    if [ -f ${dir}/bin/ldap2tns ] ; then
-   
-        color_echo red "Removing previous bin/ldap2tns" 
-        rm -f ${dir}/bin/ldif2tns
-    
-    fi
+    clean
 
 else
 
     if [ "${args}" = "clean" ] ; then
 
         color_echo red "Cleaning project"
-        rm -f ${dir}/bin/tns2ldif        2>/dev/null
-        rm -f ${dir}/bin/ldif2tns        2>/dev/null
-        rm -f ${dir}/bin/tns2ldap        2>/dev/null
-        rm -f ${dir}/bin/ldap2tns        2>/dev/null
 
-        rm -Rf ${dir}/build/*            2>/dev/null
+        clean
+        rm -Rf ${dir}/build/* 2>/dev/null
 
         color_echo green "Clean complete"
         exit 0
@@ -193,45 +198,4 @@ color_echo green "Making TNS utilities"
 make -j${cpu} ${opt}
 chkrc $?
 
-
-if [ -f ${dir}/bin/tns2ldif ] ; then
-
-    color_echo magenta "Found: bin/tns2ldif" 
-
-else
-
-    color_echo red "Not found: bin/tns2ldif"
-
-fi
-
-if [ -f ${dir}/bin/ldif2tns ] ; then
-
-    color_echo magenta "Found: bin/ldif2tns" 
-
-else
-
-    color_echo red "Not found: bin/ldif2tns"
-
-fi
-
-
-if [ -f ${dir}/bin/tns2ldap ] ; then
-
-    color_echo magenta "Found: bin/tns2ldap" 
-
-else
-
-    color_echo red "Not found: bin/tns2ldap"
-
-fi
-
-if [ -f ${dir}/bin/ldap2tns ] ; then
-
-    color_echo magenta "Found: bin/ldap2tns" 
-
-else
-
-    color_echo red "Not found: bin/ldap2tns"
-
-fi
-
+validate
