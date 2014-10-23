@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #
-proj="/projects/mti/oracle/tns2ldif/src"
 args=$@
+proj=`dirname $0`
 
 #
 function color_echo()
@@ -59,54 +59,92 @@ function chkrc()
     fi
 }
 
+#
+function chkproj()
+{
+    if [ -f ${dir}/VERSION ] ; then
+
+        prj=`grep "name: "    ${dir}/VERSION | awk -F ":" '{print $2}' | tr -d ' '`
+        ver=`grep "version: " ${dir}/VERSION | awk -F ":" '{print $2}' | tr -d ' '`
+
+        if [ "${prj}" != "TNS*Util" ] ; then
+
+            color_echo red "Cannot confirm project version name \"TNS*Util\""
+            exit 1
+
+        fi
+
+        if [[ -z "${ver}" ]] ; then
+
+            color_echo red "Cannot confirm project build version"
+            exit 1
+
+        fi
+
+        color_echo red "Auto-configuration: ${prj} - ${ver}"
+
+    else
+
+        color_echo red "This does not appear to be a TNS-Util project!"
+        exit 1
+
+    fi
+}
+
+#
 cd $proj
 chkrc $?
 
+dir=`pwd`
+
+#
+chkproj
+
+#
 if [ "$args" = "" ] ; then
 
-    if [ -f ${proj}/bin/tns2ldif ] ; then
+    if [ -f ${dir}/bin/tns2ldif ] ; then
    
         color_echo red "Removing previous bin/tns2ldif" 
-        rm -f ${proj}/bin/tns2ldif
+        rm -f ${dir}/bin/tns2ldif
     
     fi
     
     
-    if [ -f ${proj}/bin/ldif2tns ] ; then
+    if [ -f ${dir}/bin/ldif2tns ] ; then
    
         color_echo red "Removing previous bin/ldif2tns" 
-        rm -f ${proj}/bin/ldif2tns
+        rm -f ${dir}/bin/ldif2tns
     
     fi
     
 
-    if [ -f ${proj}/bin/tns2ldap ] ; then
+    if [ -f ${dir}/bin/tns2ldap ] ; then
    
         color_echo red "Removing previous bin/tns2ldap" 
-        rm -f ${proj}/bin/tns2ldif
+        rm -f ${dir}/bin/tns2ldif
     
     fi
     
     
-    if [ -f ${proj}/bin/ldap2tns ] ; then
+    if [ -f ${dir}/bin/ldap2tns ] ; then
    
         color_echo red "Removing previous bin/ldap2tns" 
-        rm -f ${proj}/bin/ldif2tns
+        rm -f ${dir}/bin/ldif2tns
     
     fi
-    
 
 else
 
     if [ "${args}" = "clean" ] ; then
 
         color_echo red "Cleaning project"
-        rm -f ${proj}/bin/tns2ldif        2>/dev/null
-        rm -f ${proj}/bin/ldif2tns        2>/dev/null
-        rm -f ${proj}/bin/tns2ldap        2>/dev/null
-        rm -f ${proj}/bin/ldap2tns        2>/dev/null
+        rm -f ${dir}/bin/tns2ldif        2>/dev/null
+        rm -f ${dir}/bin/ldif2tns        2>/dev/null
+        rm -f ${dir}/bin/tns2ldap        2>/dev/null
+        rm -f ${dir}/bin/ldap2tns        2>/dev/null
 
-        rm -Rf ${proj}/build/*            2>/dev/null
+        rm -Rf ${dir}/build/*            2>/dev/null
 
         color_echo green "Clean complete"
         exit 0
@@ -115,10 +153,11 @@ else
 
 fi
 
-if [ -d ${proj}/build ] ; then
+#
+if [ -d ${dir}/build ] ; then
 
     color_echo green "Changing to build directory"
-    cd ${proj}/build
+    cd ${dir}/build
     chkrc $?
 
     if [ -f Makefile ] ; then
@@ -136,11 +175,11 @@ if [ -d ${proj}/build ] ; then
 else
 
     color_echo green "Creating build directory"
-    mkdir -p ${proj}/build
+    mkdir -p ${dir}/build
     chkrc $?
 
     color_echo green "Changing to build directory"
-    cd ${proj}/build
+    cd ${dir}/build
     chkrc $?
 
 fi
@@ -155,7 +194,7 @@ make -j${cpu} ${opt}
 chkrc $?
 
 
-if [ -f ${proj}/bin/tns2ldif ] ; then
+if [ -f ${dir}/bin/tns2ldif ] ; then
 
     color_echo magenta "Found: bin/tns2ldif" 
 
@@ -165,7 +204,7 @@ else
 
 fi
 
-if [ -f ${proj}/bin/ldif2tns ] ; then
+if [ -f ${dir}/bin/ldif2tns ] ; then
 
     color_echo magenta "Found: bin/ldif2tns" 
 
@@ -176,7 +215,7 @@ else
 fi
 
 
-if [ -f ${proj}/bin/tns2ldap ] ; then
+if [ -f ${dir}/bin/tns2ldap ] ; then
 
     color_echo magenta "Found: bin/tns2ldap" 
 
@@ -186,7 +225,7 @@ else
 
 fi
 
-if [ -f ${proj}/bin/ldap2tns ] ; then
+if [ -f ${dir}/bin/ldap2tns ] ; then
 
     color_echo magenta "Found: bin/ldap2tns" 
 
