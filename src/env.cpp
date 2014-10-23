@@ -1,5 +1,5 @@
 //
-// main.cpp
+// env.cpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2004-2013 Metasystems Technologies Inc. (MTI)
@@ -35,7 +35,7 @@ using namespace mti;
 void usage()
 {
     //      0.........1.........2.........3.........4.........5.........6.........7.........8
-    cout << "Usage oraping TNS [COUNT]" << endl << endl;
+    cout << "Usage TNS [COUNT]" << endl << endl;
 
     cout << "  where TNS is an entry or fully qualifed description and COUNT is the number of" << endl
          << "  ping its (default 1) or 0 (zero) for unlimited"   << endl << endl;
@@ -137,129 +137,4 @@ string sid( void )
 
     //
     return val;
-}
-
-//
-int main( int argc, char** argv )
-{
-    int rc = 1;
-    string dbs;
-    int itr = 0;
-
-    //
-    version();
-    copyright();
-
-    //
-    if ( ( argc > 1 ) && ( argc < 4 ) )
-    {
-        //
-        switch ( argc )
-        {
-            case 2:
-                {
-                    if ( is_numeric( argv[ 1 ] ) )
-                    {
-                        itr = ::atoi( argv[ 1 ] );
-                        dbs = sid();
-
-                        if ( dbs.length() == 0 )
-                        {
-                            usage();
-                            return rc;
-                        }
-                    }
-                    else
-                    {
-                        dbs = string( argv[ 1 ] );
-                        itr = 1;
-                    }
-                }
-                break;
-
-            case 3:
-                dbs = string( argv[ 1 ] );
-                itr = ::atoi( argv[ 2 ] );
-                break;
-
-            default:
-                usage();
-                return rc;
-        }
-    }
-    else
-    {
-        dbs = sid();
-
-        if ( dbs.length() == 0 )
-        {
-            usage();
-            return rc;
-        }
-        else
-            itr = 1;
-    }
-
-    clock_t time;
-    int ms = 0;
-    bool ok = false;
-
-	try
-	{
-		tns tns( dbs.c_str() );
-
-		//
-		cout << "Using: " << tns.tnsnames() << endl;
-
-		//
-		if ( tns.sqlnet().length() > 0 )
-			cout << "       " << tns.sqlnet() << endl;
-
-		//
-		if ( tns.ldap().length() > 0 )
-			cout << "       " << tns.ldap() << endl;
-
-		//
-		cout << endl;
-
-		//
-		cout << "Resolved with " << tns.type() << endl;
-
-		//
-		if ( tns.name().length() > 0 )
-			cout << tns.name() << " = ";
-
-		//
-		cout << tns.desc() << endl << endl;
-
-        rc = 0;
-		for ( int i = 0; i < itr; ++i )
-		{
-			time = clock();
-
-			try
-			{
-				ora( dbs.c_str() ).attach();
-				ok = true;
-			}
-			catch ( mti::exp& x )
-			{
-                rc++;
-				ok = false;
-				cerr << x.what();
-			}
-
-			//
-			ms = (int)double( clock() - time ) / CLOCKS_PER_SEC * 1000;
-			cout << ( ( ok ) ? "OK (" : "(" ) << ms << " ms)" << endl;
-		}
-	}
-	catch ( mti::exp& x )
-	{
-		cerr << x.what() << endl;
-	}
-
-	//
-	cout << endl;
-    return rc;
 }

@@ -144,16 +144,16 @@ if(ORACLE_FOUND)
 
     colormsg(HICYAN "Processing oracle library")
 
-    get_property(Loadstar_COMPILE_DEFINITIONS
+    get_property(TNSUTIL_COMPILE_DEFINITIONS
         DIRECTORY ${CMAKE_SOURCE_DIR}
         PROPERTY COMPILE_DEFINITIONS)
     
-    list(APPEND Loadstar_COMPILE_DEFINITIONS "HAVE_ORACLE=1")
+    list(APPEND TNSUTIL_COMPILE_DEFINITIONS "HAVE_ORACLE=1")
     add_definitions(-DHAVE_ORACLE=1)
     
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR}
         PROPERTY COMPILE_DEFINITIONS
-        ${Loadstar_COMPILE_DEFINITIONS})
+        ${TNSUTIL_COMPILE_DEFINITIONS})
     
     set_directory_properties(PROPERTIES
         INCLUDE_DIRECTORIES
@@ -164,8 +164,9 @@ if(ORACLE_FOUND)
         PROPERTY INCLUDE_DIRECTORIES
         ${ORACLE_INCLUDE_DIR})
 
-    link_directories(${ORACLE_LIBRARY_DIR})
-    include_directories(${ORACLE_INCLUDE_DIR})
+   #link_directories(${ORACLE_LIBRARY_DIR})
+   link_directories(${ORACLE_HOME}/lib ${ORACLE_HOME}/lib64)
+   include_directories(${ORACLE_INCLUDE_DIR})
 
 else()
 
@@ -178,6 +179,13 @@ endif()
 #
 colormsg(HIBLUE "Configuring output directories")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+#
+link_directories("${Boost_LIBRARY_DIRS}")
+include_directories("${Boost_INCLUDE_DIRS}")
+
+#
+include_directories("${ORACLE_INCLUDE_DIR}")
 
 #
 colormsg(HIBLUE "Configuring TNS2LDIF source files")
@@ -195,8 +203,7 @@ file(GLOB TNS2LDIF_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.h"
 
 #
 add_executable(tns2ldif ${TNS2LDIF_SOURCE_FILES})
-#target_link_libraries(tns2ldif clntsh)
-target_link_libraries(tns2ldif)
+target_link_libraries(tns2ldif clntsh)
 
 #
 colormsg(HIBLUE "Configuring LDIF2TNS source files")
@@ -214,8 +221,7 @@ file(GLOB LDIF2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.h"
 
 #
 add_executable(ldif2tns ${LDIF2TNS_SOURCE_FILES})
-#target_link_libraries(ldif2tns clntsh)
-target_link_libraries(ldif2tns)
+target_link_libraries(ldif2tns clntsh)
 
 #
 colormsg(HIBLUE "Configuring TNS2LDAP source files")
@@ -233,8 +239,7 @@ file(GLOB TNS2LDAP_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.h"
 
 #
 add_executable(tns2ldap ${TNS2LDAP_SOURCE_FILES})
-#target_link_libraries(tns2ldap clntsh)
-target_link_libraries(tns2ldap)
+target_link_libraries(tns2ldap clntsh)
 
 #
 colormsg(HIBLUE "Configuring LDAP2TNS source files")
@@ -252,8 +257,7 @@ file(GLOB LDAP2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.h"
 
 #
 add_executable(ldap2tns ${LDIF2TNS_SOURCE_FILES})
-#target_link_libraries(ldap2tns clntsh)
-target_link_libraries(ldap2tns)
+target_link_libraries(ldap2tns clntsh)
 
 #
 colormsg(HIBLUE "Configuring target installation destination")

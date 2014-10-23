@@ -6,6 +6,7 @@
 # ORACLE_FOUND       = if the library found
 # ORACLE_LIBRARY     = full path to the library
 # ORACLE_LIBRARIES   = full path to the library
+# ORACLE_LIBRARY_DIR = full path where the library is found
 # ORACLE_INCLUDE_DIR = where to find the library headers also defined,
 #                       but not for general use are
 # ORACLE_VERSION     = version of library which was found, e.g. "1.2.5"
@@ -64,6 +65,10 @@ if(DEFINED ENV{ORACLE_HOME})
   endif(NOT WIN32)
 
   set(ORACLE_LIBRARIES ${ORACLE_LIBRARY})
+
+  #  # 
+  #  find_path(ORACLE_LIBRARY_DIR libclntsh.so
+  #      ${ORACLE_LIBRARIES})
 
 endif(DEFINED ENV{ORACLE_HOME})
 
