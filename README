@@ -1,5 +1,47 @@
+
+TNS2LDIF is a set of command line utilities for managing TNS entry data locally
+and through LDAP
+--------------------------------------------------------------------------------
+
+
+
+Background
+--------------------------------------------------------------------------------
+
+These utilities are based on the idea from Mark J Bobak tns2ldif.c
+(see http://markjbobak.wordpress.com/2013/10/11/openldap-care-and-feeding-of-you
+r-ldap-server for more information), but is a complete rewrite (not using
+anything from Bobak, except the idea behind the need).
+
+
+
+Utilities
+--------------------------------------------------------------------------------
+
+tns2ldif - convert a tnsnames.ora file to an LDIF file that can be loaded
+           into an LDAP store
+
+ldif2tns - convert an LDIF file (output from ldapsearch -L) into a tnsnames.ora
+           file
+
+tns2ldap - load a tnsnames.ora file into an LDAP store which is compliant with
+           Oracle's EUS repository requirements
+
+ldap2tns - create a tnsnames.ora from a Oracle EUS compliant repository, which
+           can be used locally
+
+
+
+Copyright
+--------------------------------------------------------------------------------
+
 Copyright (c) 2004-2014, Metasystems Technologies Inc. (MTI)
 All rights reserved.
+
+
+
+License
+--------------------------------------------------------------------------------
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

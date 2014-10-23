@@ -26,3 +26,16 @@
 *.exe
 *.out
 *.app
+
+# Directoies
+_old
+archive
+bin
+doc
+build
+
+# local build utilities
+push.mtissh
+pull.mtissh
+.push.mtissh
+.pull.mtissh
