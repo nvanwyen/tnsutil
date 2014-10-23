@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-proj="/projects/test/cmake/audsys"
+proj="/projects/mti/oracle/tns2ldif/src"
 args=$@
 
 #
@@ -64,36 +64,47 @@ chkrc $?
 
 if [ "$args" = "" ] ; then
 
-    if [ -f ${proj}/bin/audagent ] ; then
+    if [ -f ${proj}/bin/tns2ldif ] ; then
    
-        color_echo red "Removing previous bin/audagent" 
-        rm -f ${proj}/bin/audagent
+        color_echo red "Removing previous bin/tns2ldif" 
+        rm -f ${proj}/bin/tns2ldif
     
     fi
     
     
-    if [ -f ${proj}/bin/audfs ] ; then
+    if [ -f ${proj}/bin/ldif2tns ] ; then
    
-        color_echo red "Removing previous bin/audfs" 
-        rm -f ${proj}/bin/audfs
+        color_echo red "Removing previous bin/ldif2tns" 
+        rm -f ${proj}/bin/ldif2tns
     
     fi
     
-    if [ -f ${proj}/lib/libaudshield.so ] ; then
+
+    if [ -f ${proj}/bin/tns2ldap ] ; then
    
-        color_echo red "Removing previous lib/libaudshield.so" 
-        rm -f ${proj}/lib/libaudshield.so
+        color_echo red "Removing previous bin/tns2ldap" 
+        rm -f ${proj}/bin/tns2ldif
     
     fi
+    
+    
+    if [ -f ${proj}/bin/ldap2tns ] ; then
+   
+        color_echo red "Removing previous bin/ldap2tns" 
+        rm -f ${proj}/bin/ldif2tns
+    
+    fi
+    
 
 else
 
     if [ "${args}" = "clean" ] ; then
 
         color_echo red "Cleaning project"
-        rm -f ${proj}/bin/audagent        2>/dev/null
-        rm -f ${proj}/bin/audfs           2>/dev/null
-        rm -f ${proj}/lib/libaudshield.so 2>/dev/null
+        rm -f ${proj}/bin/tns2ldif        2>/dev/null
+        rm -f ${proj}/bin/ldif2tns        2>/dev/null
+        rm -f ${proj}/bin/tns2ldap        2>/dev/null
+        rm -f ${proj}/bin/ldap2tns        2>/dev/null
 
         rm -Rf ${proj}/build/*            2>/dev/null
 
@@ -139,39 +150,49 @@ cmake ..
 chkrc $?
 
 cpu_count
-color_echo green "Making Audit Shield"
+color_echo green "Making TNS utilities"
 make -j${cpu} ${opt}
 chkrc $?
 
 
-if [ -f ${proj}/bin/audagent ] ; then
+if [ -f ${proj}/bin/tns2ldif ] ; then
 
-    color_echo magenta "Found: bin/audagent" 
-
-else
-
-    color_echo red "Not found: bin/audagent"
-
-fi  
-
-
-if [ -f ${proj}/bin/audfs ] ; then
-
-    color_echo magenta "Found: bin/audfs" 
+    color_echo magenta "Found: bin/tns2ldif" 
 
 else
 
-    color_echo red "Not found: bin/audfs"
+    color_echo red "Not found: bin/tns2ldif"
 
-fi  
+fi
 
-if [ -f ${proj}/lib/libaudshield.so ] ; then
+if [ -f ${proj}/bin/ldif2tns ] ; then
 
-    color_echo magenta "Found: lib/libaudshield.so" 
+    color_echo magenta "Found: bin/ldif2tns" 
 
 else
 
-    color_echo red "Not found: lib/libaudshield.so"
+    color_echo red "Not found: bin/ldif2tns"
 
-fi  
+fi
+
+
+if [ -f ${proj}/bin/tns2ldap ] ; then
+
+    color_echo magenta "Found: bin/tns2ldap" 
+
+else
+
+    color_echo red "Not found: bin/tns2ldap"
+
+fi
+
+if [ -f ${proj}/bin/ldap2tns ] ; then
+
+    color_echo magenta "Found: bin/ldap2tns" 
+
+else
+
+    color_echo red "Not found: bin/ldap2tns"
+
+fi
 
