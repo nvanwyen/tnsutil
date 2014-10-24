@@ -3,6 +3,7 @@
 #
 proj="TNS*Util"
 tgts="bin/tns2ldif bin/ldif2tns bin/tns2ldap bin/ldap2tns"
+dels="src/ver.h"
 
 #
 args=$@
@@ -113,19 +114,44 @@ function clean()
 #
 function validate()
 {
-    for t in ${tgts} ; do
+    if [[ ! -z "${dels}" ]] ; then
 
-        if [ -f ${dir}/${t} ] ; then
-        
-            color_echo magenta "Found: ${t}" 
-        
-        else
-        
-            color_echo red "Not found: ${t}"
-        
-        fi
+        #
+        for d in ${dels} ; do
+    
+            if [ -f ${dir}/${d} ] ; then
+            
+                color_echo magenta "Clean: ${d}" 
+                rm -f ${dir}/${d} 2>/dev/null
+    
+            else
+    
+                color_echo red "Not found: ${d}"
+            
+            fi
+    
+        done
 
-    done
+    fi
+
+    if [[ ! -z "${tgts}" ]] ; then
+
+        #
+        for t in ${tgts} ; do
+    
+            if [ -f ${dir}/${t} ] ; then
+            
+                color_echo magenta "Found: ${t}" 
+            
+            else
+            
+                color_echo red "Not found: ${t}"
+            
+            fi
+    
+        done
+
+    fi
 }
 
 #

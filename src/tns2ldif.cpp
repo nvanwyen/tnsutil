@@ -15,5 +15,8 @@
 
 int main( int argc, char** argv )
 {
+    version( UTIL_APP );
+    copyright();
+
     return 0;
 }

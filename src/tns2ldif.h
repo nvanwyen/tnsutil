@@ -14,6 +14,10 @@
 #ifndef __TNS2LDIF_H
 #define __TNS2LDIF_H
 
+#include "ver.h"
+
+#define UTIL_APP    "tns2ldif"
+
 int main( int argc, char** argv );
 
 #endif // __TNS2LDIF_H

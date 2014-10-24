@@ -22,7 +22,6 @@
 // boost
 
 // local
-#include "ver.h"
 #include "env.h"
 #include "tns.h"
 #include "ora.h"

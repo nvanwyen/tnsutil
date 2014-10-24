@@ -176,6 +176,10 @@ else()
 
 endif()
 
+# set version
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ver.h.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ver.h")
+
 #
 colormsg(HIBLUE "Configuring output directories")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
@@ -256,7 +260,7 @@ file(GLOB LDAP2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/exp.h")
 
 #
-add_executable(ldap2tns ${LDIF2TNS_SOURCE_FILES})
+add_executable(ldap2tns ${LDAP2TNS_SOURCE_FILES})
 target_link_libraries(ldap2tns clntsh)
 
 #
@@ -265,4 +269,3 @@ install(TARGETS tns2ldif DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(TARGETS ldif2tns DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(TARGETS tns2ldap DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(TARGETS ldap2tns DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-

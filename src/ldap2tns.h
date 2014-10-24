@@ -14,6 +14,10 @@
 #ifndef __LDAP2TNS_H
 #define __LDAP2TNS_H
 
+#include "ver.h"
+
+#define UTIL_APP    "ldap2tns"
+
 int main( int argc, char** argv );
 
 #endif // __LDAP2TNS_H

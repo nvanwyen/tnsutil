@@ -13,11 +13,17 @@ set(CMAKE_MODULE_PATH ${TNSUTIL_SOURCE_DIR}/cmake
 set(CMAKE_MODULE_PATH ${TNSUTIL_SOURCE_DIR}/cmake/modules
     ${CMAKE_MODULE_PATH})
 
+# version
+set(TNSUTIL_VERSION "")
+file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION"
+    _TNSUTIL_VERSION REGEX "version:")
+string(REGEX REPLACE "version: " "" TNSUTIL_VERSION ${_TNSUTIL_VERSION})
+
 #
 include(Utilities)
 
 #
-colormsg(HIBLUE "Configuring TNMS Utilities")
+colormsg(HIBLUE "Configuring TNS Utilities version: ${TNSUTIL_VERSION}")
 
 #
 add_subdirectory(src)
