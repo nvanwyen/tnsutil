@@ -30,6 +30,7 @@ using namespace std;
 
 //
 namespace mti {
+
 //
 class ora
 {
@@ -69,5 +70,7 @@ class ora
         string msg_;
         sb4    val_;
 };
-}
+
+} // mti
+
 #endif // __ORA_H

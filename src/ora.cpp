@@ -27,6 +27,8 @@
 // local
 #include "ora.h"
 
+//
+using namespace std;
 using namespace mti;
 
 //

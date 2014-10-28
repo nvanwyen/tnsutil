@@ -14,11 +14,47 @@
 #ifndef __TNS2LDAP_H
 #define __TNS2LDAP_H
 
+//
+#include <string>
 #include "ver.h"
 
 #define UTIL_APP    "tns2ldap"
 
+// generic usage
+//
+void usage();
+
+// entry
+//
 int main( int argc, char** argv );
+
+//
+namespace mti {
+
+// wrapper class
+//
+class app
+{
+    public:
+        app( int c, char** v );
+        ~app() {}
+
+    bool ok() { return ok_; }
+
+    void print();
+
+    protected:
+    private:
+        //
+        std::string tnsfile_;
+        std::string ldpfile_;
+        bool        ok_;
+
+        //
+        bool options( int c, char** v );
+};
+
+} // mti
 
 #endif // __TNS2LDAP_H
 

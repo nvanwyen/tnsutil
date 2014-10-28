@@ -23,35 +23,8 @@
 
 // local
 #include "env.h"
-#include "tns.h"
-#include "ora.h"
-#include "exp.h"
 
 using namespace std;
-using namespace mti;
-
-//
-void usage()
-{
-    //      0.........1.........2.........3.........4.........5.........6.........7.........8
-    cout << "Usage TNS [COUNT]" << endl << endl;
-
-    cout << "  where TNS is an entry or fully qualifed description and COUNT is the number of" << endl
-         << "  ping its (default 1) or 0 (zero) for unlimited"   << endl << endl;
-
-    cout << "  examples: $ oraping orcl"                                << endl << endl;
-
-    cout << "            $ oraping //server.com:5521/orcl 3"            << endl << endl;
-
-    cout << "            $ oraping \"(description = \\"                         << endl;
-    cout << "                           (address = \\"                          << endl;
-    cout << "                               (protocol = tcp) \\"                << endl;
-    cout << "                               (host = server.com) \\"             << endl;
-    cout << "                               (port = 1521)) \\"                  << endl;
-    cout << "                           (connect_data = \\"                     << endl;
-    cout << "                               (server = dedicated) \\"            << endl;
-    cout << "                               (service_name = orcl)))\""  << endl << endl;
-}
 
 //
 bool is_numeric( char *val )

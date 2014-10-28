@@ -414,25 +414,24 @@ int ldap_sort_entries( LDAP *ld,
                        int (*cmp)() );
 
 //
-#ifdef __LDAP_SORT_VALUES
+#ifndef __LDAP_SORT_VALUES
 #define __LDAP_SORT_VALUES
 
 //
-typedef int lcomp( const char* left,
-                   const char* right );
+typedef int lcomp( const void* left,
+                   const void* right );
 
 // not part of the Oracle library
 int ldap_sort_values( LDAP  *ld,
                       char  **vals,
                       lcomp *cmp )
 {
-    int sz = 0;
+    size_t sz = 0;
 
     for ( int i = 0; vals[ i ] != NULL; i++ )
         ++sz;
 
-    qsort( vals, sz, sizeof( char* ), cmp );
-
+    qsort( (void*)vals, sz, sizeof( char* ), cmp );
     return sz;
 }
 
@@ -475,4 +474,20 @@ void ber_free( BerElement *ber,
 #ifdef __cplusplus
 }
 #endif
+
+//
+namespace mti {
+
+class ldp
+{
+    public:
+        ldp() {}
+        ~ldp() {}
+
+    protected:
+    private:
+};
+
+} // mti
+
 #endif // __LDP_H

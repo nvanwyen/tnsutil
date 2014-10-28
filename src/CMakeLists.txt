@@ -195,6 +195,7 @@ include_directories("${ORACLE_INCLUDE_DIR}")
 colormsg(HIBLUE "Configuring TNS2LDIF source files")
 file(GLOB TNS2LDIF_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ver.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.cpp"
@@ -203,6 +204,8 @@ file(GLOB TNS2LDIF_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ldp.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/exp.h")
 
 #
@@ -213,6 +216,7 @@ target_link_libraries(tns2ldif clntsh)
 colormsg(HIBLUE "Configuring LDIF2TNS source files")
 file(GLOB LDIF2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ver.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.cpp"
@@ -221,6 +225,8 @@ file(GLOB LDIF2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ldp.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/exp.h")
 
 #
@@ -231,6 +237,7 @@ target_link_libraries(ldif2tns clntsh)
 colormsg(HIBLUE "Configuring TNS2LDAP source files")
 file(GLOB TNS2LDAP_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ver.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.cpp"
@@ -239,6 +246,8 @@ file(GLOB TNS2LDAP_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ldp.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/exp.h")
 
 #
@@ -249,6 +258,7 @@ target_link_libraries(tns2ldap clntsh)
 colormsg(HIBLUE "Configuring LDAP2TNS source files")
 file(GLOB LDAP2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ver.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/tns.cpp"
@@ -257,6 +267,8 @@ file(GLOB LDAP2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/ldp.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/env.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/exp.h")
 
 #

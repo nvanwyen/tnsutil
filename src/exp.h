@@ -41,6 +41,7 @@ using namespace std;
 
 //
 namespace mti {
+
 //
 class exp : public exception
 {
@@ -78,5 +79,7 @@ class exp : public exception
         string what_;
         int    code_;
 };
-}
+
+} // mti
+
 #endif // __EXP_H

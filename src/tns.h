@@ -31,6 +31,7 @@ using namespace std;
 
 //
 namespace mti {
+
 //
 class tns
 {
@@ -180,5 +181,7 @@ class tns
         string resolve( string ent );
         string compare( string dsc );
 };
-}
+
+} // mti
+
 #endif // __TNS_H
