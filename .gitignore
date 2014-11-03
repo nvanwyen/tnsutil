@@ -39,3 +39,6 @@ push.mtissh
 pull.mtissh
 .push.mtissh
 .pull.mtissh
+
+# IDE
+.idea

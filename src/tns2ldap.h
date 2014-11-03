@@ -17,6 +17,7 @@
 //
 #include <string>
 #include "ver.h"
+#include "tns.h"
 
 #define UTIL_APP    "tns2ldap"
 
@@ -49,6 +50,9 @@ class app
         std::string tnsfile_;
         std::string ldpfile_;
         bool        ok_;
+
+        //
+        mti::tnsnames tns_;
 
         //
         bool options( int c, char** v );

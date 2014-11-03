@@ -30,6 +30,15 @@
 
 #include <stdlib.h>
 
+
+#ifdef __cplusplus
+// boost
+#include <boost/lexical_cast.hpp>
+
+// local
+#include "uri.h"
+#endif
+
 //
 #define LDAP_SUCCESS                0x0000
 #define LDAP_OPERATIONS_ERROR       0x0001
@@ -475,19 +484,92 @@ void ber_free( BerElement *ber,
 }
 #endif
 
+#ifdef __cplusplus
 //
 namespace mti {
 
-class ldp
+//
+class store
 {
+    //
     public:
-        ldp() {}
-        ~ldp() {}
+        //
+        string host;
+        int    port;
+        bool   secure;
+
+        string root;
+
+        //
+        store()
+            : host( "" ), port( 0 ), secure( false ), root( "" ) {}
+
+        store( string h, int p )
+            : host( h ),  port( p ), secure( false ), root( "" ) {}
+
+        store( string h, int p, bool s )
+            : host( h ),  port( p ), secure( s ),     root( "" ) {}
+
+        store( string h, int p, bool s, string r )
+            : host( h ),  port( p ), secure( s ),     root( r )  {}
+
+        //
+        store( string u ) { url( u ); }
+
+        //
+        ~store() {}
+
+        //
+        void url( string u )
+        {
+            uri i( u ); 
+
+            //
+            host = i.host();
+            port = i.port();
+
+            //
+            if ( i.protocol().substr( i.protocol().length() - 1 ) == "s" )
+                secure = true;
+        }
+
+        //
+        string url()
+        {
+            string u;
+
+            //
+            if ( ! ok() )
+                throw exp( "Invalid ldap store object!", EXP_INVALID );
+
+            //
+            u = ( ( secure ) ? "ldaps" : "ldap" ) 
+                   + string( "://" ) 
+                   + host;
+
+            //
+            if ( ! ( ( secure && ( port == 636 ) ) || ( ! secure && ( port == 389 ) ) ) )
+            {
+                u += string( ":" ) 
+                   + boost::lexical_cast<string>( port );
+            }
+
+            return u;
+        }
 
     protected:
     private:
+        //
+        bool ok()
+        {
+            return ( ( host.length() > 0 ) && ( port > 0 ) );
+        }
 };
+
+//
+typedef boost::shared_ptr<store> ldsapstore;
 
 } // mti
 
+#endif // __cplusplus
 #endif // __LDP_H

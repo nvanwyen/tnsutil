@@ -19,6 +19,8 @@
 #include "ldap2tns.h"
 #include "opt.h"
 
+#include "uri.h"
+
 //
 using namespace std;
 using namespace mti;
@@ -26,6 +28,7 @@ using namespace mti;
 //
 void usage()
 {
+//           0--------1---------2---------3---------4---------5---------6---------7---------8
     cout << "Usage: " << UTIL_APP << " options <tnsnames.ora>|<->\n";
     cout << "where:\n";
     cout << "   <tnsnames.ora>        : TNS Names output file\n";
@@ -37,6 +40,11 @@ void usage()
     cout << "   [-h | --host]   <val> : LDAP server host or IP\n";
     cout << "   [-p | --port]   <val> : LDAP server port number\n";
     cout << "   [-b | --base]   <val> : Base (parent) entry where entries are managed\n";
+    cout << "   [-a | --admin|  <val> : Location of the TNS_ADMIN directory\n";
+    cout << "    -l | --ldap &  <val> : The ldap.ora file\n";
+    cout << "    -s | --sqlnet] <val> : The sqlnet.ora file\n";
+    cout << "   [-n | --nosort]       : Do not sort entries, before outputting results\n";
+    cout << "   [-? | --help]         : Show the utility help and usage\n";
     cout << "\n";
 }
 

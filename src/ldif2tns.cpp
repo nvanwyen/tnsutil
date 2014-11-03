@@ -26,12 +26,15 @@ using namespace mti;
 //
 void usage()
 {
+//           0--------1---------2---------3---------4---------5---------6---------7---------8
     cout << "Usage: " << UTIL_APP << " options <tnsnames.ora>|<->\n";
     cout << "where:\n";
     cout << "   <tnsnames.ora>        : TNS Names output file\n";
     cout << "   <->                   : output to stdout\n";
     cout << "options:\n";
     cout << "    -l | --ldif    <val> : The LDIF file location\n";
+    cout << "   [-n | --nosort]       : Do not sort entries, before outputting results\n";
+    cout << "   [-? | --help]         : Show the utility help and usage\n";
     cout << "\n";
 }
 

@@ -38,6 +38,7 @@ using namespace std;
 #define EXP_OPEN                0x07
 #define EXP_UNSUPPORTED         0x08
 #define EXP_UNRESOLVED          0x09
+#define EXP_INVALID             0x10
 
 //
 namespace mti {

@@ -121,6 +121,13 @@ string tns::rtrim( string str )
 }
 
 //
+string tns::lcase( string str )
+{
+    transform( str.begin(), str.end(),str.begin(), ::tolower );
+    return str;
+}
+
+//
 string tns::ucase( string str )
 {
     transform( str.begin(), str.end(),str.begin(), ::toupper );
@@ -245,56 +252,22 @@ tns::entry tns::resolve( string name, string desc )
 }
 
 //
-void tns::reconcile( string ent )
+tns::entry& tns::find( string ent )
 {
-
     //
     string desc;
 
     //
-    try
-    {
-        //
-        tnsnames_ = find( TNSNAMES_FILE );
-    }
-    catch ( exp& x )
-    {
-        // ... do nothing
-        if ( x.code() == EXP_MISSING )
-            sqlnet_ = "";
-        else
-            throw exp( "File [" + string( TNSNAMES_FILE ) + "] not found!", EXP_OPEN );
-    }
+    if ( tnsnames().length() == 0 )
+        throw exp ( "TNS*Names file not found!", EXP_MISSING );
 
     //
-    try
-    {
-        //
-        sqlnet_ = find( SQLNET_FILE );
-    }
-    catch ( exp& x )
-    {
-        // ... do nothing
-        if ( x.code() == EXP_MISSING )
-            sqlnet_ = "";
-        else
-            throw exp( "File [" + string( SQLNET_FILE ) + "] not found!", EXP_OPEN );
-    }
+    if ( sqlnet().length() == 0 )
+        throw exp ( "SQL*Net file not found!", EXP_MISSING );
 
     //
-    try
-    {
-        //
-        ldap_ = find( LDAP_FILE );
-    }
-    catch ( exp& x )
-    {
-        // ... do nothing
-        if ( x.code() == EXP_MISSING )
-            ldap_ = "";
-        else
-            throw exp( "File [" + string( LDAP_FILE ) + "] not found!", EXP_OPEN );
-    }
+    if ( ldap().length() == 0 )
+        throw exp ( "LDAP*Net file not found!", EXP_MISSING );
 
     //
     if ( load_methods() > 0 )
@@ -314,7 +287,7 @@ void tns::reconcile( string ent )
 				}
 				catch ( exp& x )
 				{
-					throw exp( x.what(), x.code() );
+					throw exp ( x.what(), x.code() );
 				}
 			}
 
@@ -326,12 +299,12 @@ void tns::reconcile( string ent )
 				}
 				catch ( exp& x )
 				{
-					throw exp( x.what(), x.code() );
+					throw exp ( x.what(), x.code() );
 				}
 			}
 
             if ( *i == "ONAMES" )
-                throw exp( "Unsupported naming type [" + (*i) + "]!", EXP_UNSUPPORTED );
+                throw exp ( "Unsupported naming type [" + (*i) + "]!", EXP_UNSUPPORTED );
         }
     }
     else
@@ -349,6 +322,7 @@ void tns::reconcile( string ent )
 
     //
     entry_ = resolve( ent, resolve( ent ) );
+    return entry_;
 }
 
 //
@@ -394,7 +368,7 @@ bool tns::exists( string file )
 }
 
 //
-string tns::find( string name )
+string tns::locate( string name )
 {
     string file;
 
@@ -470,7 +444,7 @@ string tns::find( string name )
     // not found ...
     //
     if ( file.length() == 0 )
-        throw exp( "File [" + name + "] not found!", EXP_MISSING );
+        throw exp ( "File [" + name + "] not found!", EXP_MISSING );
 
     //
     return file;
@@ -528,9 +502,11 @@ size_t tns::load_methods()
         }
         catch ( exception& x )
         {
-            throw exp( "File [" + sqlnet_ + "] read error: "  + string( x.what() ), EXP_OPEN );
+            throw exp ( "File [" + sqlnet_ + "] read error: "  + string( x.what() ), EXP_OPEN );
         }
     }
+    else
+        throw exp ( "SQL*Net file is missing or undefined!", EXP_MISSING );
 
     //
     if ( methods_.size() == 0 )
@@ -645,11 +621,11 @@ size_t tns::load_tnsnames()
             }
             catch ( exception& x )
             {
-                throw exp( "File [" + tnsnames_ + "] read error: "  + string( x.what() ), EXP_OPEN );
+                throw exp ( "File [" + tnsnames_ + "] read error: "  + string( x.what() ), EXP_OPEN );
             }
         }
         else
-            throw exp( "TNS Names file [tnsnames.ora] not found or is invalid", EXP_MISSING );
+            throw exp ( "TNS*Names missing or undefined!", EXP_MISSING );
     }
 
     //
@@ -731,14 +707,14 @@ bool tns::resolve_directory()
                             string typ = ucase( trim( buf.substr( lpos + 1 ) ) );
 
                             if ( typ != "OID" )
-                                throw exp( "Unsupported directory type [" + typ + "] encountered", EXP_UNSUPPORTED );
+                                throw exp ( "Unsupported directory type [" + typ + "] encountered", EXP_UNSUPPORTED );
                         }
                     }
                 }
             }
             catch ( exception& x )
             {
-                throw exp( "File [" + sqlnet_ + "] read error: "  + string( x.what() ), EXP_OPEN );
+                throw exp ( "File [" + sqlnet_ + "] read error: "  + string( x.what() ), EXP_OPEN );
             }
         }
     }
@@ -881,6 +857,8 @@ size_t tns::load_ldap()
         else
             cerr << MISSING_MESG_FILE << endl << endl;
     }
+    else
+        throw exp ( "LDAP*Names file is missing or undefined!", EXP_MISSING );
 
     //
     return 0;
@@ -940,3 +918,126 @@ string tns::compare( string dsc )
 
     return ent;
 }
+
+
+string tns::tnsnames()
+{
+    if ( tnsnames_.length() == 0 )
+    {
+        //
+        try
+        {
+            //
+            tnsnames_ = locate( TNSNAMES_FILE );
+        }
+        catch ( exp& x )
+        {
+            // ... do nothing
+            if ( x.code() == EXP_MISSING )
+                sqlnet_ = "";
+            else
+                throw exp ( "File [" + string( TNSNAMES_FILE ) + "] not found!", EXP_OPEN );
+        }
+    }
+
+    return tnsnames_; 
+}
+
+string tns::sqlnet()
+{
+    if ( sqlnet_.length() == 0 )
+    {
+        //
+        try
+        {
+            //
+            sqlnet_ = locate( SQLNET_FILE );
+        }
+        catch ( exp& x )
+        {
+            // ... do nothing
+            if ( x.code() == EXP_MISSING )
+                sqlnet_ = "";
+            else
+                throw exp ( "File [" + string( SQLNET_FILE ) + "] not found!", EXP_OPEN );
+        }
+    }
+
+    return sqlnet_; 
+}
+
+string tns::ldap()
+{
+    if ( ldap_.length() == 0 )
+    {
+        //
+        try
+        {
+            //
+            ldap_ = locate( LDAP_FILE );
+        }
+        catch ( exp& x )
+        {
+            // ... do nothing
+            if ( x.code() == EXP_MISSING )
+                ldap_ = "";
+            else
+                throw exp ( "File [" + string( LDAP_FILE ) + "] not found!", EXP_OPEN );
+        }
+    }
+
+    return ldap_; 
+}
+
+//
+string tns::tnsnames( string filename )
+{
+    if ( filename.length() == 0 )
+    {
+        tnsnames_ = tnsnames();
+    }
+    else
+    {
+        if ( exists( filename ) )
+            tnsnames_ = filename;
+        else
+            throw exp ( "File [" + filename + "] not found!", EXP_MISSING );
+    }
+
+    return tnsnames_;
+}
+
+string tns::sqlnet( string filename )
+{
+    if ( filename.length() == 0 )
+    {
+        sqlnet_ = sqlnet();
+    }
+    else
+    {
+        if ( exists( filename ) )
+            sqlnet_ = filename;
+        else
+            throw exp ( "File [" + filename + "] not found!", EXP_MISSING );
+    }
+
+    return sqlnet_;
+}
+
+string tns::ldap( string filename )
+{
+    if ( filename.length() == 0 )
+    {
+        ldap_ = ldap();
+    }
+    else
+    {
+        if ( exists( filename ) )
+            ldap_ = filename;
+        else
+            throw exp ( "File [" + filename + "] not found!", EXP_MISSING );
+    }
+
+    return ldap_;
+}
+

@@ -17,17 +17,27 @@
 // c
 
 // c++
-#include <stdexcept>
 #include <string>
 #include <vector>
+#include <cctype>
+#include <stdexcept>
+#include <algorithm>
+#include <functional>
 
 // boost
+#include <boost/shared_ptr.hpp>
 
 // local
 #include "exp.h"
 
 //
 using namespace std;
+
+//
+#define UNKNOWN_ORA     0
+#define TNSNAMES_ORA    1
+#define LDAP_ORA        2
+#define SQLNET_ORA      4
 
 //
 namespace mti {
@@ -58,6 +68,32 @@ class tns
                     type = (origin) t;
                 }
 
+                //
+                string source()
+                {
+                    string t;
+
+                    switch ( type )
+                    {
+                        case TNSNAMES:
+                            t = "TNSNAMES";
+                            break;
+
+                        case LDAP:
+                            t = "LDAP";
+                            break;
+
+                        case EZCONNECT:
+                            t = "EZCONNECT";
+                            break;
+
+                        default:
+                            t = "UNKNOWN";
+                    }
+
+                    return t;
+                }
+
             protected:
             private:
         };
@@ -69,53 +105,37 @@ class tns
         typedef vector<entry>::iterator  item;
         typedef vector<string>::iterator method;
 
-
         //
         tns() {};
-        tns( string ent ) { reconcile( ent ); };
-
         ~tns() {}
 
         //
-        void reconcile( string ent );
+        entry& find( string ent );
 
         //
-        string name() { return entry_.name; }
+        string sqlnet();
 
         //
-        string desc() { return entry_.desc; }
+        string tnsnames();
+        string ldap();
 
         //
-        string type()
-        {
-            string t;
-
-            switch ( entry_.type )
-            {
-                case entry::TNSNAMES:
-                    t = "TNSNAMES";
-                    break;
-
-                case entry::LDAP:
-                    t = "LDAP";
-                    break;
-
-                case entry::EZCONNECT:
-                default:
-                    t = "EZCONNECT";
-                    break;
-            }
-
-            return t;
-        }
+        string sqlnet( string filename );
 
         //
-        string tnsnames() { return tnsnames_; }
-        string sqlnet()   { return sqlnet_; }
-        string ldap()     { return ldap_; }
+        string tnsnames( string filename );
+        string ldap( string filename );
 
-        entries tns_entries() { return entries_; }
+        //
+        size_t load_methods();
+
+        //
+        size_t load_tnsnames();
+        size_t load_ldap();
+
+        //
         methods tns_methods() { return methods_; }
+        entries tns_entries() { return entries_; }
 
     protected:
     private:
@@ -123,8 +143,10 @@ class tns
         entry entry_;
 
         // files
-        string tnsnames_;
         string sqlnet_;
+
+        //
+        string tnsnames_;
         string ldap_;
 
         // ldap.ora
@@ -136,7 +158,7 @@ class tns
         // sqlnet.ora
         methods methods_;               // connection type (from sqlnet.ora)
 
-        //
+        // tnsnames.ora and ldap://...
         entries entries_;               // list of all entries
 
         //
@@ -146,6 +168,7 @@ class tns
         string rtrim( string str );
 
         //
+        string lcase( string str );
         string ucase( string str );
 
         //
@@ -158,18 +181,15 @@ class tns
         size_t add( string name, string desc, entry::origin type );
         size_t add( entry ent );
 
-        //
+        // resolve a single entry
         entry resolve( string name, string desc );
 
         //
         string env( string var );       // get the value of a environment variable
         bool exists( string file );     // test if a file exists
-        string find( string name );     // find a file based on the TNS search order
 
         //
-        size_t load_tnsnames();
-        size_t load_methods();
-        size_t load_ldap();
+        string locate( string name );   // find a file based on the TNS search order
 
         //
         bool resolve_directory();
@@ -182,6 +202,8 @@ class tns
         string compare( string dsc );
 };
 
-} // mti
+//
+typedef boost::shared_ptr<tns> tnsnames;
 
+}
 #endif // __TNS_H
