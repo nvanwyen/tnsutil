@@ -14,10 +14,12 @@
 //
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 //
 #include "tns2ldif.h"
 #include "opt.h"
+#include "exp.h"
 
 //
 using namespace std;
@@ -65,7 +67,11 @@ int main( int argc, char** argv )
 }
 
 //
-app::app( int c, char** v )
+app::app( int c, char** v ) : tns_( new mti::tns() ),
+                              ldpfile_( "" ),
+                              tnsfile_( "" ),
+                              format_( "" ),
+                              sort_( true )
 {
     ok_ = options( c, v );
 }
@@ -77,6 +83,8 @@ void app::print()
 
     cout << "tnsfile_ = " << tnsfile_ << "\n";
     cout << "ldpfile_ = " << ldpfile_ << "\n";
+    cout << "format_ =  " << format_ << "\n";
+    cout << "sort_ =    " << ( ( sort_ ) ? "true" : "false" ) << "\n";
 }
 
 //
@@ -100,12 +108,48 @@ bool app::options( int c, char** v )
         }
 
         //
-        if ( ! ( ops >> Option( 't', "tnsnames",  tnsfile_ ) ) )
+        if ( ops >> OptionPresent( 't', "tns" ) )
         {
-            cerr << "Missiing input tnsnames.ora file [-t|--tns]\n";
-            usage();
-            return false;
+            //
+            ops >> Option( 't', "tns",  tnsfile_ );
+
+            //
+            try
+            {
+                tns_->tnsnames( tnsfile_ );
+            }
+            catch ( exp& x )
+            {
+                cerr << x.what() << "\n";
+                return false;
+            }
         }
+        else
+            tnsfile_ = tns_->tnsnames();
+
+        //
+        if ( ops >> OptionPresent( 'f', "format" ) )
+        {
+            //
+            ops >> Option( 'f', "format",  format_ );
+        }
+        else
+            format_ = "add";
+
+        //
+        vector<string> fmt;
+        fmt.push_back( "add" );
+        fmt.push_back( "mod" );
+
+        //
+        if ( std::find( fmt.begin(), fmt.end(), format_ ) == fmt.end() )
+            cerr << "--format must be \"add\" or \"mod\"!\n";
+        
+        //
+        if ( ops >> OptionPresent( 'n', "nosort" ) )
+            sort_ = false;
+        else
+            sort_ = true;
 
         //
         vector<string> opt;

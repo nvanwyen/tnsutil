@@ -14,8 +14,14 @@
 #ifndef __TNS2LDAP_H
 #define __TNS2LDAP_H
 
-//
+// c
+
+// c++
 #include <string>
+
+// boost
+
+// local
 #include "ver.h"
 #include "tns.h"
 

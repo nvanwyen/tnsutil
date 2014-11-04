@@ -191,6 +191,8 @@ include_directories("${Boost_INCLUDE_DIRS}")
 #
 include_directories("${ORACLE_INCLUDE_DIR}")
 
+add_definitions(-g)
+
 #
 colormsg(HIBLUE "Configuring TNS2LDIF source files")
 file(GLOB TNS2LDIF_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.h"

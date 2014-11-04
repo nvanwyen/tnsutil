@@ -37,17 +37,19 @@
 // local
 #include "env.h"
 #include "tns.h"
-#include "exp.h"
 #include "ldp.h"
 
 //
 #define ATTR_IDX_CN                 0
-#define ATTR_IDX_DESC               1
-#define ATTR_IDX_ALIAS              2
-
+//
 #define ATTR_VAL_CN                 "cn"
 #define ATTR_VAL_DESC               "orclnetdescstring"
 #define ATTR_VAL_ALIAS              "aliasedobjectname"
+
+//
+#define LDAP_SEARCH                 "(|(|(objectclass=orclNetService)"       \
+                                        "(objectclass=orclService))i"        \
+                                        "(objectclass=orclNetServiceAlias))"
 
 //
 #ifndef ETC_DIR
@@ -746,7 +748,7 @@ size_t tns::load_ldap()
                     {
                         // use the first element for sorting
                         const char* attrs[]  = { ATTR_VAL_CN, ATTR_VAL_DESC, ATTR_VAL_ALIAS, NULL };
-                        const char  filter[] = "(|(|(objectclass=orclNetService)(objectclass=orclService))(objectclass=orclNetServiceAlias))";
+                        const char  filter[] = LDAP_SEARCH;
                         struct timeval tv    = { 1, 0 };
                         LDAPMessage* res     = NULL;
 
