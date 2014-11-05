@@ -29,6 +29,9 @@
 #include "uri.h"
 
 //
+typedef struct ldap LDAP;
+
+//
 using namespace std;
 
 //
@@ -229,6 +232,12 @@ class tns
         size_t load_ldap();
 
         //
+        size_t load_ldif( streambuf* buf );
+
+        //
+        int save_ldap( entry& ent, bool del = true );
+
+        //
         methods tns_methods() { return methods_; }
         entries tns_entries() { return entries_; }
 
@@ -280,6 +289,8 @@ class tns
 
         //
         bool mesg();
+        bool ldap_exists( LDAP* ld, char* dn );
+        bool ldap_delete( LDAP* ld, char* dn );
 
         //
         size_t add( string name, string desc, entry::origin type );

@@ -13,11 +13,15 @@
 
 //
 #include <iostream>
+#include <fstream>
 #include <vector>
+#include <algorithm>
 
 //
 #include "tns2ldap.h"
 #include "opt.h"
+
+#include "uri.h"
 
 //
 using namespace std;
@@ -35,8 +39,9 @@ void usage()
     cout << "    -D | --DN      <val> : Distinguished name of the LDAP account\n";
     cout << "   [-w | --passwd| <val> : Distinguished name password\n";
     cout << "    -q | --prompt]       : Prompt for the Distinguished name password\n";
-    cout << "   [-h | --host]   <val> : LDAP server host or IP\n";
-    cout << "   [-p | --port]   <val> : LDAP server port number\n";
+    cout << "   [-u | --url|    <val> : Use the LDAP Url string as ldap[s]://<host>:<port>\n";
+    cout << "    -h | --host &  <val> : LDAP server host or IP\n";
+    cout << "    -p | --port]   <val> : LDAP server port number\n";
     cout << "   [-b | --base]   <val> : Base (parent) entry where entries are managed\n";
     cout << "   [-a | --admin|  <val> : Location of the TNS_ADMIN directory\n";
     cout << "    -l | --ldap &  <val> : The ldap.ora file\n";
@@ -57,14 +62,11 @@ int main( int argc, char** argv )
     copyright();
 
     //
-    app eng( argc, argv );
+    app app( argc, argv );
 
     //
-    if ( eng.ok() )
-    {
-        eng.print();
-        rc = 0;
-    }
+    if ( app.ok() )
+        rc = app.run();
     else
         rc = 1;
 
@@ -72,17 +74,99 @@ int main( int argc, char** argv )
     return rc;
 }
 
-//
-app::app( int c, char** v ) : ok_( options( c, v ) ),
-                              tns_( new mti::tns() ) {}
+app::app( int c, char** v ) : tns_( new mti::tns() ),
+                              tnsfile_( "" ),
+                              dn_( "" ),
+                              pw_( "" ),
+                              url_( "" ),
+                              host_( "" ),
+                              port_( 0 ),
+                              root_( "" ),
+                              admin_( "" ),
+                              ldap_( "" ),
+                              sqlnet_( "" ),
+                              sort_( true ),
+                              ok_( false )
+{
+    ok_ = options( c, v );
+}
 
 //
-void app::print()
+int app::run()
 {
     using namespace std;
 
-    cout << "tnsfile_ = " << tnsfile_ << "\n";
-    cout << "ldpfile_ = " << ldpfile_ << "\n";
+    int rc = 0;
+    tns::store sto;
+
+    //
+    if ( url_.length() > 0 )
+    {
+        //
+        sto.url( url_ );
+    }
+    else
+    {
+        //
+        if ( ( host_.length() > 0 ) && ( port_ > 0 ) )
+        {
+            //
+            sto.host = host_;
+            sto.port = port_;
+        }
+        else
+        {
+            //
+            if ( ldap_.length() > 0 )
+                tns_->ldap( ldap_ );
+            else
+                tns_->ldap( tns_->ldap() );
+
+            //
+            if ( sqlnet_.length() > 0 )
+                tns_->sqlnet( sqlnet_ );
+            else
+                tns_->sqlnet( tns_->sqlnet() );
+
+            //
+            sto = tns_->resolve_directory();
+        }
+    }
+
+    //
+    if ( ! sto.ok() )
+    {
+        cerr << "The LDAP server information is missing or invalid!\n";
+        rc = 1;
+    }
+    else
+    {
+        //
+        if ( dn_.length() > 0 )
+            sto.dn = dn_;
+
+        //
+        if ( pw_.length() > 0 )
+            sto.pw = pw_;
+
+        //
+        tns_->ldapstore( sto );
+
+        //
+        if ( tns_->load_tnsnames() > 0 )
+        {
+            //
+            tns::entries ent = tns_->tns_entries();
+
+            // data
+            for ( tns::item i = ent.begin(); i != ent.end(); ++i )
+                tns_->save_ldap( (*i) );
+        }
+        else
+            cerr << "No TNS entries found!\n";
+    }
+
+    return rc;
 }
 
 //
@@ -106,12 +190,210 @@ bool app::options( int c, char** v )
         }
 
         //
-        if ( ! ( ops >> Option( 'l', "ldif",  ldpfile_ ) ) )
+        if ( ops >> OptionPresent( 'D', "DN" ) )
         {
-            cerr << "Missiing tnsnames.ora file [-l|--ldif]\n";
-            usage();
+            //
+            ops >> Option( 'D', "DN",  dn_ );
+        }
+        else
+            dn_ = "";
+
+        //
+        if ( ( ops >> OptionPresent( 'q', "prompt" ) )
+          && ( ops >> OptionPresent( 'w', "passwd" ) ) )
+        {
+            cerr << "Cannot specify both --prompt [-q] and --passwd [-w] together\n";
             return false;
         }
+
+        //
+        if ( ops >> OptionPresent( 'q', "prompt" ) )
+        {
+            //
+            pw_ = password();
+        }
+        else
+        {
+            //
+            if ( ops >> OptionPresent( 'w', "passwd" ) )
+            {
+                //
+                ops >> Option( 'w', "passwd",  pw_ );
+            }
+            else
+            {
+                pw_ = "";
+            }
+        }
+
+        //
+        if ( ( ( dn_.length() >  0 ) && ( pw_.length() == 0 ) )
+          || ( ( dn_.length() == 0 ) && ( pw_.length() >  0 ) ) )
+        {
+            cerr << "--DN [-D] and password [--passwd [-w] | --prompt [-q]] must be supplied together\n";
+            return false;
+        }
+
+        //
+        if ( ops >> OptionPresent( 'u', "url" ) )
+        {
+            //
+            if ( ops >> OptionPresent( 'u', "url" ) )
+            {
+                //
+                ops >> Option( 'u', "url",  url_ );
+            }
+            else
+            {
+                url_ = "";
+            }
+        }
+        else
+            url_ = "";
+
+        //
+        if ( ops >> OptionPresent( 'h', "host" ) )
+        {
+            //
+            if ( ops >> OptionPresent( 'h', "host" ) )
+            {
+                //
+                ops >> Option( 'h', "host",  host_ );
+            }
+            else
+            {
+                host_ = "";
+            }
+        }
+        else
+            host_ = "";
+
+        //
+        if ( ops >> OptionPresent( 'p', "port" ) )
+        {
+            //
+            if ( ops >> OptionPresent( 'p', "port" ) )
+            {
+                //
+                ops >> Option( 'p', "port",  port_ );
+            }
+            else
+            {
+                port_ = 0;
+            }
+        }
+        else
+            port_ = 0;
+
+        //
+        if ( ops >> OptionPresent( 'b', "base" ) )
+        {
+            //
+            if ( ops >> OptionPresent( 'b', "base" ) )
+            {
+                //
+                ops >> Option( 'b', "base",  root_ );
+            }
+            else
+            {
+                root_ = "";
+            }
+        }
+        else
+            root_ = "";
+
+        //
+        if ( ops >> OptionPresent( 'a', "admin" ) )
+        {
+            //
+            if ( ops >> OptionPresent( 'a', "admin" ) )
+            {
+                //
+                ops >> Option( 'a', "admin",  admin_ );
+            }
+            else
+            {
+                admin_ = "";
+            }
+        }
+        else
+            admin_ = "";
+
+        //
+        if ( ops >> OptionPresent( 'l', "ldap" ) )
+        {
+            //
+            if ( ops >> OptionPresent( 'l', "ldap" ) )
+            {
+                //
+                ops >> Option( 'l', "ldap",  ldap_ );
+            }
+            else
+            {
+                ldap_ = "";
+            }
+        }
+        else
+            ldap_ = "";
+
+        //
+        if ( ops >> OptionPresent( 's', "sqlnet" ) )
+        {
+            //
+            if ( ops >> OptionPresent( 's', "sqlnet" ) )
+            {
+                //
+                ops >> Option( 's', "sqlnet",  sqlnet_ );
+            }
+            else
+            {
+                sqlnet_ = "";
+            }
+        }
+        else
+            sqlnet_ = "";
+
+        //
+        if ( ( admin_.length() > 0 ) && ( ( ldap_.length() > 0 ) || ( sqlnet_.length() > 0 ) ) )
+        {
+            cerr << "Cannot use --admin [-a] together with --ldap [-l] or --sqlnet [-s]\n";
+            return false;
+        }
+        else
+        {
+            if ( ( ldap_.length() > 0 ) || ( sqlnet_.length() > 0 ) )
+            {
+                if ( ! ( ( ldap_.length() > 0 ) && ( sqlnet_.length() > 0 ) ) )
+                {
+                    cerr << "Options --ldap [-l] and --sqlnet [-s] must both be specified together\n";
+                    return false;
+                }
+            }
+        }
+
+        //
+        if ( ( url_.length() > 0 ) && ( ( host_.length() > 0 ) || ( port_ > 0 ) ) )
+        {
+            cerr << "Cannot use --url [-u] together with --host [-h] or --port [-p]\n";
+            return false;
+        }
+        else
+        {
+            if ( ( host_.length() > 0 ) || ( port_ > 0 ) )
+            {
+                if ( ! ( ( host_.length() > 0 ) && ( port_ > 0 ) ) )
+                {
+                    cerr << "Options --host [-h] and --port [-p] must both be specified together\n";
+                    return false;
+                }
+            }
+        }
+
+        //
+        if ( ops >> OptionPresent( 'n', "nosort" ) )
+            sort_ = false;
+        else
+            sort_ = true;
 
         //
         vector<string> opt;
@@ -146,3 +428,4 @@ bool app::options( int c, char** v )
     //
     return true;    
 }
+

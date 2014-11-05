@@ -162,6 +162,8 @@ int app::run()
             rc = 1;
         }
     }
+    else
+        cerr << "No TNS entries found!\n";
 
     return rc;
 }

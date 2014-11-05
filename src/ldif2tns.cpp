@@ -13,7 +13,9 @@
 
 //
 #include <iostream>
+#include <fstream>
 #include <vector>
+#include <algorithm>
 
 //
 #include "ldif2tns.h"
@@ -48,14 +50,11 @@ int main( int argc, char** argv )
     copyright();
 
     //
-    app eng( argc, argv );
+    app app( argc, argv );
 
     //
-    if ( eng.ok() )
-    {
-        eng.print();
-        rc = 0;
-    }
+    if ( app.ok() )
+        rc = app.run();
     else
         rc = 1;
 
@@ -64,18 +63,92 @@ int main( int argc, char** argv )
 }
 
 //
-app::app( int c, char** v )
+app::app( int c, char** v ) : tns_( new mti::tns() ),
+                              tnsfile_( "" ),
+                              ldpfile_( "" ),
+                              sort_( true ),
+                              ok_( false )
 {
     ok_ = options( c, v );
 }
 
 //
-void app::print()
+int app::run()
 {
     using namespace std;
 
-    cout << "tnsfile_ = " << tnsfile_ << "\n";
-    cout << "ldpfile_ = " << ldpfile_ << "\n";
+    int rc = 1;
+
+    //
+    fstream ldif( ldpfile_.c_str() );
+
+    //
+    if ( ldif.is_open() )
+    {
+        //
+        if ( tns_->load_ldif( ldif.rdbuf() ) > 0 )
+        {
+            //
+            bool       opn = false;
+            streambuf* buf;
+            ofstream   fil;
+
+            //
+            if ( tnsfile_ != "-" )
+            {
+                fil.open( tnsfile_.c_str() );
+            
+                if ( fil.is_open() )
+                {
+                    buf = fil.rdbuf();
+                    opn = true;
+                }
+                else
+                    buf = cout.rdbuf();
+            }
+            else
+            {
+                buf = cout.rdbuf();
+                opn = true;
+            }
+            
+            //
+            std::ostream tnsfile( buf );
+
+            //
+            if ( opn )
+            {
+                //
+                tns::entries ent = tns_->tns_entries();
+
+                //
+                if ( sort_ )
+                    tns_->sort_entries( ent );
+
+                // header
+                tnsfile << "# Source:  " << ldpfile_ << endl;
+                tnsfile << "# Created: " << now() << endl;
+                tnsfile << endl;
+
+                //
+                for ( tns::item i = ent.begin(); i != ent.end(); ++i )
+                {
+                    tnsfile << "# " << (*i).name << endl;
+                    tnsfile << tns_->pretty( *i ) << endl;
+                }
+
+                //
+                tnsfile << endl;
+            }
+        }
+        else
+            cerr << "No entries found!\n";
+    }
+    else
+        cerr << "Could not open LDIF file!\n";
+
+    //
+    return rc;
 }
 
 //
@@ -105,6 +178,12 @@ bool app::options( int c, char** v )
             usage();
             return false;
         }
+
+        //
+        if ( ops >> OptionPresent( 'n', "nosort" ) )
+            sort_ = false;
+        else
+            sort_ = true;
 
         //
         vector<string> opt;

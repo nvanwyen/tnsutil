@@ -168,7 +168,7 @@ string tns::split( string str, int idx, string tok /*= ","*/ )
         dat = ::strtok( NULL, tok.c_str() );
     }
 #else
-	char *nxt = NULL;
+	char* nxt = NULL;
 
 	dat = ::strtok_s( &str[ 0 ], tok.c_str(), &nxt );
 
@@ -741,6 +741,7 @@ size_t tns::load_ldap()
     if ( mesg() )
     {
         //
+        LDAP* ld = NULL;
         char* dn = NULL;
         char* pw = NULL;
 
@@ -755,8 +756,6 @@ size_t tns::load_ldap()
 
             if ( store_.ok() )
             {
-                LDAP *ld;
-
                 //
                 url = store_.url();
 
@@ -769,13 +768,11 @@ size_t tns::load_ldap()
                     struct timeval tv    = { 1, 0 };
                     LDAPMessage* res     = NULL;
 
-
                     //
                     if ( store_.dn.length() > 0 )
                     {
                         dn = (char*)::malloc( sizeof( char ) * ( store_.dn.length() + 1 ) );
                         ::memset( dn, 0, sizeof(char) * ( store_.dn.length() + 1 ) );
-
                         ::memcpy( dn, store_.dn.c_str(), ( store_.dn.length() + 1 ) );
                     }
 
@@ -784,13 +781,12 @@ size_t tns::load_ldap()
                     {
                         pw = (char*)::malloc( sizeof( char ) * ( store_.pw.length() + 1 ) );
                         ::memset( pw, 0, sizeof(char) * ( store_.pw.length() + 1 ) );
-
                         ::memcpy( pw, store_.pw.c_str(), ( store_.pw.length() + 1 ) );
                     }
 
                     //
                     if ( ( rc = ::ldap_simple_bind_s( ld, dn, pw ) ) != LDAP_SUCCESS )
-                        throw exp ( "LDAP anonymous bind failed: " + string( ::ldap_err2string( rc ) ), rc );
+                        throw exp ( "LDAP bind failed: " + string( ::ldap_err2string( rc ) ), rc );
 
                     //
                     if ( ( rc = ::ldap_search_ext_s( ld,
@@ -894,18 +890,250 @@ size_t tns::load_ldap()
         }
 
         //
-        if ( dn )
-            ::free( dn );
+        if ( dn ) ::free( dn );
+        if ( pw ) ::free( pw );
 
         //
-        if ( pw )
-            ::free( pw );
+        if ( ld )
+        {
+            //
+            if ( ( rc = ldap_unbind_s( ld ) ) != LDAP_SUCCESS )
+                throw exp ( "LDAP unbind failed: " + string( ::ldap_err2string( rc ) ), rc );
+        }
     }
     else
         cerr << MISSING_MESG_FILE << endl << endl;
 
     //
     return entries_.size();
+}
+
+//
+size_t tns::load_ldif( streambuf* dat )
+{
+    //
+    if ( dat )
+    {
+        //
+        string buf;
+        istream ldif( dat );
+
+        //
+        string ent; // entry name
+        string dsc; //       desc
+
+        //
+        while ( std::getline( ldif, buf ) )
+        {
+            //
+            if ( buf.length() == 0 )
+                continue;
+
+            //
+            if ( buf.substr( 0, 1 ) == "#" )
+                continue;
+
+            //
+            if ( lcase( buf ).substr( 0, 3 ) == "dn:" )
+            {
+                ent = dsc = "";
+                continue;
+            }
+
+            //
+            if ( lcase( buf ).substr( 0, 12 ) == "objectclass:" )
+                continue;
+
+            //
+            if ( lcase( buf ).substr( 0, 3 ) == "cn:" )
+                ent = trim( buf.substr( 4, string::npos ) );
+
+            //
+            if ( lcase( buf ).substr( 0, 18 ) == "orclnetdescstring:" )
+                dsc = trim( buf.substr( 19, string::npos ) );
+
+            //
+            if ( buf.substr( 0, 1 ) == " " )
+            {
+                dsc += trim( buf );
+                continue;
+            }
+
+            //
+            if ( ( ent.length() > 0 ) && ( dsc.length() > 0 ) )
+                add( ent, dsc, entry::LDAP );
+        }
+    }
+    else
+        throw exp ( "Encountered NULL stream buffer", EXP_NULL );
+
+    //
+    return entries_.size();
+}
+
+//
+bool tns::ldap_exists( LDAP* ld, char* dn )
+{
+    return false;
+}
+
+//
+bool tns::ldap_delete( LDAP* ld, char* dn )
+{
+    int rc = LDAP_SUCCESS;
+
+    try
+    {
+        //
+        if (  ( rc = ::ldap_delete_s( ld, dn ) ) != LDAP_SUCCESS )
+            throw exp ( "LDAP delete failed: " + string( ::ldap_err2string( rc ) ), rc );
+    }
+    catch ( exp& x )
+    {
+        cerr << store_.url() << " - " << x.what() << " [" << rc << "]" << endl << endl;
+    }
+
+    //
+    return ( rc == LDAP_SUCCESS );
+}
+
+//
+int tns::save_ldap( entry& ent, bool del /*= true*/ )
+{
+    int rc = LDAP_SUCCESS;
+
+    if ( mesg() )
+    {
+        //
+        LDAP* ld = NULL;
+        char* dn = NULL;
+        char* pw = NULL;
+
+        //
+        string url;
+
+        try
+        {
+            if ( ! store_.ok() )
+                store_ = resolve_directory();
+
+            if ( store_.ok() )
+            {
+                //
+                url = store_.url();
+
+                //
+                if ( ( ld = ::ldap_init( (char*)store_.host.c_str(), store_.port ) ) != NULL )
+                {
+                    bool ext = false;
+                    string rdn = "cn=" + ent.name + "," + store_.root;
+
+                    //
+                    if ( store_.dn.length() > 0 )
+                    {
+                        dn = (char*)::malloc( sizeof( char ) * ( store_.dn.length() + 1 ) );
+                        ::memset( dn, 0, sizeof(char) * ( store_.dn.length() + 1 ) );
+                        ::memcpy( dn, store_.dn.c_str(), ( store_.dn.length() + 1 ) );
+                    }
+
+                    //
+                    if ( store_.pw.length() > 0 )
+                    {
+                        pw = (char*)::malloc( sizeof( char ) * ( store_.pw.length() + 1 ) );
+                        ::memset( pw, 0, sizeof(char) * ( store_.pw.length() + 1 ) );
+                        ::memcpy( pw, store_.pw.c_str(), ( store_.pw.length() + 1 ) );
+                    }
+
+                    //
+                    if ( ( rc = ::ldap_simple_bind_s( ld, dn, pw ) ) != LDAP_SUCCESS )
+                        throw exp ( "LDAP bind failed: " + string( ::ldap_err2string( rc ) ), rc );
+
+                    //
+                    if ( ( ext = ldap_exists( ld, (char*)rdn.c_str() ) ) )
+                    {
+                        //
+                        if ( del )
+                            ext = !ldap_delete( ld, (char*)rdn.c_str() );
+                    }
+
+                    //
+                    if ( ext )
+                    {
+                        //
+                        char* obv[] = { "top", "orclService", "orclContainer", "orclNetService", NULL };
+                        char* cnv[] = { NULL, NULL };
+                        char* nsv[] = { NULL, NULL };
+
+                        //cnv[ 0 ] = (char*)ent.name.c_str();
+                        //nsv[ 0 ] = (char*)ent.desc.c_str();
+
+                        //
+                        LDAPMod ob;
+                        LDAPMod cn;
+                        LDAPMod ns;
+
+                        //
+                        LDAPMod* mod[ 4 ] = { NULL, NULL, NULL, NULL };
+
+                        //
+                        ob.mod_op     = LDAP_MOD_ADD;
+                        ob.mod_type   = "objectclass";
+                        ob.mod_values = obv;
+
+                        //
+                        cn.mod_op     = LDAP_MOD_ADD;
+                        cn.mod_type   = "cn";
+                        cn.mod_values = cnv;
+
+                        //
+                        ns.mod_op     = LDAP_MOD_ADD;
+                        ns.mod_type   = "orclNetDescString";
+                        ns.mod_values = nsv;
+
+                        //
+                        mod[ 0 ] = &ob;
+                        mod[ 1 ] = &cn;
+                        mod[ 2 ] = &ns;
+                        mod[ 3 ] = NULL;
+
+                        //
+                        if (  ( rc = ::ldap_add_s( ld, (char*)rdn.c_str(), mod ) ) != LDAP_SUCCESS )
+                            throw exp ( "LDAP add failed: " + string( ::ldap_err2string( rc ) ), rc );
+                    }
+                    else
+                        throw exp ( "Cannot replace existing LDAP entry [" + rdn + "]", EXP_EXISTS );
+                }
+                else
+                {
+                    throw exp ( "LDAP initialization failed", rc );
+                }
+            }
+            else
+                throw exp ( "Unresolved directory information", EXP_UNRESOLVED );
+        }
+        catch ( exp& x )
+        {
+            // 
+            cerr << store_.url() << " - " << x.what() << " [" << rc << "]" << endl << endl;
+        }
+
+        //
+        if ( dn ) ::free( dn );
+        if ( pw ) ::free( pw );
+
+        //
+        if ( ld )
+        {
+            //
+            if ( ( rc = ldap_unbind_s( ld ) ) != LDAP_SUCCESS )
+                throw exp ( "LDAP unbind failed: " + string( ::ldap_err2string( rc ) ), rc );
+        }
+    }
+    else
+        cerr << MISSING_MESG_FILE << endl << endl;
+
+    //
+    return rc;
 }
 
 //

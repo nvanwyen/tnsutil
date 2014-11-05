@@ -337,6 +337,30 @@ typedef struct ldap {
     LDAPCreds       *ld_creds;          /* credential information */
 } LDAP;
 
+/* for modifications */
+typedef struct ldapmod {
+        int             mod_op;
+#define LDAP_MOD_ADD            0x00
+#define LDAP_MOD_DELETE         0x01
+#define LDAP_MOD_REPLACE        0x02
+#define LDAP_MOD_BVALUES        0x80
+        char            *mod_type;
+        int             mod_ver;
+        char            mod_time[48];
+        char            mod_server[128];
+        union {
+                char            **modv_strvals;
+                struct berval   **modv_bvals;
+        } mod_vals;
+        struct berval   **modv_nvals;
+#define mod_values      mod_vals.modv_strvals
+#define mod_bvalues     mod_vals.modv_bvals
+#ifdef ONLDAPD
+        struct ldapmod  *mod_next;
+        int createTombstone;
+#endif
+} LDAPMod;
+
 #if !defined(MACOS) && !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
 #include <sys/time.h>
 #endif
@@ -354,6 +378,9 @@ int ldap_set_option( LDAP *ld,
 int ldap_simple_bind_s( LDAP *ld,
                         char *who,
                         char *passwd );
+
+//
+int ldap_unbind_s( LDAP *ld );
 
 //
 int ldap_search_ext_s( LDAP *ld,
@@ -456,53 +483,56 @@ char *ldap_err2string( int err );
 void ber_free( BerElement *ber,
                int freebuf );
 
-/*
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_init"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_set_option"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_simple_bind_s"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_search_ext_s"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_result"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_count_entries"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_count_messages"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_first_entry"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_next_entry"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_first_attribute"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_next_attribute"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_get_values"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_msgfree"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_memfree"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_value_free"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_sort_entries"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_sort_values"    # as expeced not in th Oracle library
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_get_dn"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ldap_err2string"
-    objdump -T $ORACLE_HOME/lib64/libclntsh.so | egrep -w "ber_free"
+//
+void ldap_mods_free( LDAPMod **mods, 
+                     int freemods );
+
+//
+int ldap_add_s( LDAP *ld, 
+                char *dn, 
+                LDAPMod **attrs );
+
+//
+int ldap_modify_s( LDAP *ld, 
+                   char *dn, 
+                   LDAPMod **mods );
+
+//
+int ldap_delete_s( LDAP *ld, 
+                   char *dn );
+
+/* *** verify the oracle client shell, library, contains the
+       requiered LDAP API functions ***
+
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_init"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_set_option"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_simple_bind_s"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_search_ext_s"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_result"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_count_entries"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_count_messages"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_first_entry"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_next_entry"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_first_attribute"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_next_attribute"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_get_values"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_msgfree"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_memfree"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_value_free"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_sort_entries"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_sort_values"    # as expeced not in th Oracle library
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_get_dn"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_err2string"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ber_free"
+
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_mods_free"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_add_s"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_modify_s"
+    objdump -T $ORACLE_HOME/lib/libclntsh.so | egrep -w "ldap_delete_s"
 */
 
 #ifdef __cplusplus
 }
 #endif
 
-#ifdef __cplusplus
-//
-namespace mti {
-
-//
-class ldap
-{
-    public:
-        //
-        ldap() {}
-        ~ldap() {}
-
-    protected:
-    private:
-};
-
-//
-typedef boost::shared_ptr<ldap> ldapserver;
-
-} // mti
-
-#endif // __cplusplus
 #endif // __LDP_H

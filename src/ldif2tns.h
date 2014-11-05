@@ -14,9 +14,16 @@
 #ifndef __LDIF2TNS_H
 #define __LDIF2TNS_H
 
-//
+// c
+
+// c++
 #include <string>
+
+// boost
+
+// local
 #include "ver.h"
+#include "tns.h"
 
 #define UTIL_APP    "ldif2tns"
 
@@ -41,14 +48,21 @@ class app
 
     bool ok() { return ok_; }
 
-    void print();
+    int run();
 
     protected:
     private:
         //
+        bool        ok_;
+
+        //
         std::string tnsfile_;
         std::string ldpfile_;
-        bool        ok_;
+        //
+        bool        sort_;
+
+        //
+        mti::tnsnames tns_;
 
         //
         bool options( int c, char** v );

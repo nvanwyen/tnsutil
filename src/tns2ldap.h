@@ -48,14 +48,31 @@ class app
 
     bool ok() { return ok_; }
 
-    void print();
+    int run();
 
     protected:
     private:
         //
-        std::string tnsfile_;
-        std::string ldpfile_;
         bool        ok_;
+
+        //
+        std::string tnsfile_;
+        //
+        std::string dn_;
+        std::string pw_;
+        //
+        std::string url_;
+        //
+        std::string host_;
+        int         port_;
+        //
+        std::string root_;
+        //
+        std::string admin_;
+        std::string ldap_;
+        std::string sqlnet_;
+        //
+        bool        sort_;
 
         //
         mti::tnsnames tns_;
