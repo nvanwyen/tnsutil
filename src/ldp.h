@@ -36,7 +36,6 @@
 #include <boost/lexical_cast.hpp>
 
 // local
-#include "uri.h"
 #endif
 
 //
@@ -489,85 +488,19 @@ void ber_free( BerElement *ber,
 namespace mti {
 
 //
-class store
+class ldap
 {
-    //
     public:
         //
-        string host;
-        int    port;
-        bool   secure;
-
-        string root;
-
-        //
-        store()
-            : host( "" ), port( 0 ), secure( false ), root( "" ) {}
-
-        store( string h, int p )
-            : host( h ),  port( p ), secure( false ), root( "" ) {}
-
-        store( string h, int p, bool s )
-            : host( h ),  port( p ), secure( s ),     root( "" ) {}
-
-        store( string h, int p, bool s, string r )
-            : host( h ),  port( p ), secure( s ),     root( r )  {}
-
-        //
-        store( string u ) { url( u ); }
-
-        //
-        ~store() {}
-
-        //
-        void url( string u )
-        {
-            uri i( u ); 
-
-            //
-            host = i.host();
-            port = i.port();
-
-            //
-            if ( i.protocol().substr( i.protocol().length() - 1 ) == "s" )
-                secure = true;
-        }
-
-        //
-        string url()
-        {
-            string u;
-
-            //
-            if ( ! ok() )
-                throw exp( "Invalid ldap store object!", EXP_INVALID );
-
-            //
-            u = ( ( secure ) ? "ldaps" : "ldap" ) 
-                   + string( "://" ) 
-                   + host;
-
-            //
-            if ( ! ( ( secure && ( port == 636 ) ) || ( ! secure && ( port == 389 ) ) ) )
-            {
-                u += string( ":" ) 
-                   + boost::lexical_cast<string>( port );
-            }
-
-            return u;
-        }
+        ldap() {}
+        ~ldap() {}
 
     protected:
     private:
-        //
-        bool ok()
-        {
-            return ( ( host.length() > 0 ) && ( port > 0 ) );
-        }
 };
 
 //
-typedef boost::shared_ptr<store> ldsapstore;
+typedef boost::shared_ptr<ldap> ldapserver;
 
 } // mti
 

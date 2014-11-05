@@ -13,6 +13,7 @@
 
 //
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
 
@@ -20,6 +21,10 @@
 #include "tns2ldif.h"
 #include "opt.h"
 #include "exp.h"
+
+//
+#define LDAP_MOD        "changetype: add"
+
 
 //
 using namespace std;
@@ -35,6 +40,7 @@ void usage()
     cout << "   <->                   : output LDIF to stdout\n";
     cout << "options:\n";
     cout << "    -t | --tns     <val> : tnsnames.ora file location\n";
+    cout << "   [-b | --base]   <val> : Base DN for LDIF output\n";
     cout << "   [-f | --format] <val> : LDIF output type, add|mod\n";
     cout << "   [-n | --nosort]       : Do not sort entries, before outputting results\n";
     cout << "   [-? | --help]         : Show the utility help and usage\n";
@@ -51,14 +57,11 @@ int main( int argc, char** argv )
     copyright();
 
     //
-    app eng( argc, argv );
+    app app( argc, argv );
 
     //
-    if ( eng.ok() )
-    {
-        eng.print();
-        rc = 0;
-    }
+    if ( app.ok() )
+        rc = app.run();
     else
         rc = 1;
 
@@ -71,20 +74,96 @@ app::app( int c, char** v ) : tns_( new mti::tns() ),
                               ldpfile_( "" ),
                               tnsfile_( "" ),
                               format_( "" ),
-                              sort_( true )
+                              sort_( true ),
+                              ok_( false )
 {
     ok_ = options( c, v );
 }
 
 //
-void app::print()
+int app::run()
 {
+    int rc = 1;
+
     using namespace std;
 
-    cout << "tnsfile_ = " << tnsfile_ << "\n";
-    cout << "ldpfile_ = " << ldpfile_ << "\n";
-    cout << "format_ =  " << format_ << "\n";
-    cout << "sort_ =    " << ( ( sort_ ) ? "true" : "false" ) << "\n";
+    //
+    if ( tns_->load_tnsnames() > 0 )
+    {
+        bool       opn = false;
+        streambuf* buf;
+        ofstream   fil;
+
+        //
+        tns::entries ent = tns_->tns_entries();
+
+        //
+        if ( sort_ )
+            tns_->sort_entries( ent );
+
+        //
+        if ( ldpfile_ != "-" )
+        {
+            fil.open( ldpfile_.c_str() );
+
+            if ( fil.is_open() )
+            {
+                buf = fil.rdbuf();
+                opn = true;
+            }
+            else
+                buf = cout.rdbuf();
+        }
+        else
+        {
+            buf = cout.rdbuf();
+            opn = true;
+        }
+
+        //
+        std::ostream ldif( buf );
+
+        //
+        if ( opn )
+        {
+            // header
+            ldif << "# Source:  " << tnsfile_ << endl;
+            ldif << "# Created: " << now() << endl;
+            ldif << endl;
+
+            // data
+            for ( tns::item i = ent.begin(); i != ent.end(); ++i )
+            {
+                // dn
+                ldif << "# " << (*i).name << endl;
+                ldif << "dn: cn=" << (*i).name << "," << base_ << endl;
+
+                // add|mod format
+                if ( format_ == "mod" )
+                    ldif << LDAP_MOD << endl;
+
+                // objectclasses
+                ldif << "objectclass: top" << endl;
+                ldif << "objectclass: orclService" << endl;
+                ldif << "objectclass: orclContainer" << endl;
+                ldif << "objectclass: orclNetService" << endl;
+
+                // attributes
+                ldif << "cn: " << (*i).name << endl;
+                ldif << "orclNetDescString: " << (*i).desc << endl;
+
+                //
+                ldif << endl;
+            }
+        }
+        else
+        {
+            cerr << "Could not open LDIF file [" << ldpfile_ << "]" << endl;
+            rc = 1;
+        }
+    }
+
+    return rc;
 }
 
 //
@@ -128,6 +207,15 @@ bool app::options( int c, char** v )
             tnsfile_ = tns_->tnsnames();
 
         //
+        if ( ops >> OptionPresent( 'b', "base" ) )
+        {
+            //
+            ops >> Option( 'b', "base",  base_ );
+        }
+        else
+            base_ = "cn=OracleContext";
+
+        //
         if ( ops >> OptionPresent( 'f', "format" ) )
         {
             //
@@ -158,7 +246,7 @@ bool app::options( int c, char** v )
         //
         if ( ! ( opt.size() == 1 ) )
         {
-            cerr << "Missing LDIF output [tnsnames.ldif|-]\n";
+            cerr << "Missing LDIF output [<file>|-]\n";
             usage();
             return false;
         }

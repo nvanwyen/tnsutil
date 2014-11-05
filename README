@@ -8,10 +8,10 @@ and through LDAP
 Background
 --------------------------------------------------------------------------------
 
-These utilities are based on the idea from Mark J Bobak tns2ldif.c
-(see http://markjbobak.wordpress.com/2013/10/11/openldap-care-and-feeding-of-you
-r-ldap-server for more information), but is a complete rewrite (not using
-anything from Bobak, except the idea behind the need).
+These utilities are based on the idea from Mark J Bobak tns2ldif.c (see below)
+(see http://markjbobak.wordpress.com/2013/10/11/openldap-care-and-feeding-of-your-ldap-server
+for more information), but is a complete rewrite (not using anything from Bobak,
+except the idea behind the need).
 
 
 
@@ -68,3 +68,94 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+Original tns2ldif.c source code from
+https://docs.google.com/a/mtihq.com/file/d/0B2t_l1d1imCbM3p6WDNNWTB2TWc/edit
+--------------------------------------------------------------------------------
+    /*  tns2ldif.c -- filter to convert tnsnames.ora entries to LDIF for      */
+    /*                import to OpenLDAP                                      */
+    /*  Written by Mark J. Bobak, mark@bobak.net, mark.bobak@proquest.com     */
+    /*  Copyright 2013, ProQuest Company                                      */
+    /*  This program is free software: you can redistribute it and/or modify  */
+    /*  it under the terms of the GNU General Public License as published by  */
+    /*  the Free Software Foundation, either version 3 of the License, or     */
+    /*  (at your option) any later version.                                   */
+    /*                                                                        */
+    /*  This program is distributed in the hope that it will be useful,       */
+    /*  but WITHOUT ANY WARRANTY; without even the implied warranty of        */
+    /*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         */
+    /*  GNU General Public License for more details.                          */
+    /*                                                                        */
+    /*  You should have received a copy of the GNU General Public License     */
+    /*  along with this program.  If not, see <http://www.gnu.org/licenses/>. */
+    
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <ctype.h>
+    #define MAX_LINE_LENGTH 1024
+    #define MAX_TNS_LENGTH 256
+    #define MAX_ALIASES 32
+    #define MAX_DOMAIN_LENGTH 255
+    #define DEFAULT_DOMAIN "dc=proquest,dc=com"
+    int main(int argc, char *argv[])
+    {
+        int ret;
+        int x;
+        int i=0;
+        int delim_pos = 0;
+        char    tns_entry[MAX_LINE_LENGTH+1];
+        char    *tns_line;
+        char    tns_name[MAX_TNS_LENGTH+1];
+        char    *conn_str;
+        int num_aliases;
+        char    *alias[MAX_ALIASES];
+        char    domain[MAX_DOMAIN_LENGTH+1];
+    
+        if(argc == 3)
+        {
+            if(!strcmp(argv[1], "-d"))
+                strcpy(domain,argv[2]);
+            else
+                fprintf(stderr,"%s:  invalid option\n",argv[0]);
+        }
+        else
+            strcpy(domain,DEFAULT_DOMAIN);
+    
+        while(fgets(tns_entry,MAX_LINE_LENGTH,stdin))
+        {
+            tns_line = tns_entry;
+            while(isblank(tns_line[0]))
+                tns_line++;
+            if(tns_line[0]!='#')
+            {
+                for(x=0;x<=strlen(tns_line);x++)
+                    if(tns_line[x]== '=')
+                    {   
+                        delim_pos=x;
+                        break;
+                    }
+                strncpy(tns_name,tns_line,delim_pos);
+                tns_name[delim_pos] = '\0';
+                for(x=strlen(tns_name);x>0;x--)
+                    if(tns_name[x] == ' ')
+                        tns_name[x] = '\0';
+                num_aliases = 0;
+                for(x=strlen(tns_name);x>0;x--)
+                    if(tns_name[x] == ',')
+                    {
+                        alias[num_aliases] = tns_name+x+1;
+                        tns_name[x] = '\0';
+                        num_aliases++;
+                    }
+                conn_str = strstr(tns_line, "=");   
+                conn_str++;
+                conn_str[strlen(conn_str)-1] = '\0';
+                fprintf(stdout,"dn: cn=%s,cn=OracleContext,%s\nobjectclass: top\nobjectclass: orclNetService\ncn: %s\norclNetDescString: %s\n\n",tns_name,domain,tns_name,conn_str);
+                for(x=0;x<num_aliases;x++)
+                    fprintf(stdout,"dn: cn=%s,cn=OracleContext,%s\nobjectclass: orclNetServiceAlias\nobjectclass: top\nobjectclass: alias\ncn: %s\naliasedobjectname: cn=%s,cn=OracleContext,%s\n\n",alias[x],domain,alias[x],tns_name,domain);
+            }
+            else
+                fprintf(stdout,"%s",tns_line);
+        }
+        return 0;
+    }

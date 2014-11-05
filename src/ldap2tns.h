@@ -14,9 +14,16 @@
 #ifndef __LDAP2TNS_H
 #define __LDAP2TNS_H
 
-//
+// c
+
+// c++
 #include <string>
+
+// boost
+
+// local
 #include "ver.h"
+#include "tns.h"
 
 #define UTIL_APP    "ldap2tns"
 
@@ -41,14 +48,34 @@ class app
 
     bool ok() { return ok_; }
 
-    void print();
+    int run();
 
     protected:
     private:
         //
-        std::string tnsfile_;
-        std::string ldpfile_;
         bool        ok_;
+
+        //
+        std::string tnsfile_;
+        //
+        std::string dn_;
+        std::string pw_;
+        //
+        std::string url_;
+        //
+        std::string host_;
+        int         port_;
+        //
+        std::string root_;
+        //
+        std::string admin_;
+        std::string ldap_;
+        std::string sqlnet_;
+        //
+        bool        sort_;
+
+        //
+        mti::tnsnames tns_;
 
         //
         bool options( int c, char** v );

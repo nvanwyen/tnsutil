@@ -14,7 +14,23 @@
 #ifndef __VER_H
 #define __VER_H
 
+// c
 #include <stdio.h>
+
+#if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
+#include <termios.h>
+#include <unistd.h>
+#else
+#include <windows.h>
+#endif
+
+// c++
+#include <string>
+#include <ctime>
+
+// boost
+
+// local
 
 //
 #define APPLICATION         "TNS Utility"
@@ -37,6 +53,58 @@ void copyright()
     ::fprintf( stdout, "\n%s\n%s\n\n",
                        CORPORATION,
                        COPYWRITE );
+}
+
+//
+std::string now()
+{
+    time_t rawtime;
+    struct tm* timeinfo;
+    char buffer[ 80 ];
+    
+    time( &rawtime );
+    timeinfo = localtime( &rawtime );
+    
+    strftime( buffer, 80, "%Y-%m-%d %I:%M:%S", timeinfo );
+    std::string str( buffer );
+    
+    return str;
+}
+
+//
+std::string password()
+{
+    std::string passwd;
+
+    std::cout << "Password: ";
+
+#if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
+     termios oldt;
+ 
+     ::tcgetattr( STDIN_FILENO, &oldt );
+     termios newt = oldt;
+ 
+     newt.c_lflag &= ~ECHO;
+     ::tcsetattr( STDIN_FILENO, TCSANOW, &newt );
+ 
+     std::getline( std::cin, passwd );
+ 
+     ::tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
+#else
+    HANDLE hStdin = GetStdHandle( STD_INPUT_HANDLE ); 
+    DWORD mode = 0;
+
+    ::GetConsoleMode( hStdin, &mode );
+    ::SetConsoleMode( hStdin, mode & (~ENABLE_ECHO_INPUT) );
+
+    std::getline( std::cin, passwd );
+
+    ::SetConsoleMode( hStdin, mode );
+#endif
+
+    std::cout << std::endl;
+
+    return passwd;
 }
 
 #endif // __VER_H

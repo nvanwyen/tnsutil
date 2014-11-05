@@ -27,10 +27,13 @@
 #endif
 
 // c++
+#include <cctype>
 #include <sstream>
 #include <fstream>
-#include <iostream>
+#include <iostream> 
+#include <stdexcept>
 #include <algorithm>
+#include <functional>
 
 // boost
 
@@ -46,10 +49,12 @@
 #define ATTR_VAL_DESC               "orclnetdescstring"
 #define ATTR_VAL_ALIAS              "aliasedobjectname"
 
-//
+
 #define LDAP_SEARCH                 "(|(|(objectclass=orclNetService)"       \
-                                        "(objectclass=orclService))i"        \
+                                        "(objectclass=orclService))"         \
                                         "(objectclass=orclNetServiceAlias))"
+// (|(|(objectclass=orclNetService)(objectclass=orclService))(objectclass=orclNetServiceAlias))
+
 
 //
 #ifndef ETC_DIR
@@ -98,6 +103,14 @@
 #define MISSING_MESG_FILE           "LDAP Method encountered, but the %ORACLE_HOME%\\ldap\\mesg\\ldapus.msb is missing!"
 #endif // !define...
 #endif // MISSING_MESG_FILE
+
+#if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
+#define NL                          "\n"
+#else
+#define NL                          "\r\n"
+#endif // !WINDOWS
+
+#define PADDING                     "    "
 
 using namespace std;
 using namespace mti;
@@ -635,235 +648,264 @@ size_t tns::load_tnsnames()
 }
 
 //
-bool tns::resolve_directory()
+tns::store tns::resolve_directory()
 {
     //
-    if ( ( host_.length() == 0 ) )
+    if ( ldap_.length() > 0 )
     {
         //
-        if ( ldap_.length() > 0 )
+        ifstream ifs;
+
+        try
         {
+            string buf; // line buffer
+
             //
-            ifstream ifs;
+            ifs.open( ldap_.c_str(), ios::in );
 
-            try
+            //
+            while ( getline( ifs, buf ) )
             {
-                string buf; // line buffer
+                size_t pos;
 
                 //
-                ifs.open( ldap_.c_str(), ios::in );
+                buf = trim( buf );
 
                 //
-                while ( getline( ifs, buf ) )
+                if ( buf.substr( 0, 1 ) == "#" )
+                    continue;
+
+                //
+                if ( ( pos = ucase( buf ).find( "DIRECTORY_SERVERS", 0 ) ) != string::npos )
                 {
-                    size_t pos;
+                    size_t lpos = buf.find_first_of( "(" );
 
-                    //
-                    buf = trim( buf );
-
-                    //
-                    if ( buf.substr( 0, 1 ) == "#" )
-                        continue;
-
-                    //
-                    if ( ( pos = ucase( buf ).find( "DIRECTORY_SERVERS", 0 ) ) != string::npos )
+                    if ( lpos != string::npos )
                     {
-                        size_t lpos = buf.find_first_of( "(" );
+                        size_t rpos = buf.find_first_of( ")", lpos + 1 );
 
-                        if ( lpos != string::npos )
+                        if ( rpos != string::npos )
                         {
-                            size_t rpos = buf.find_first_of( ")", lpos + 1 );
+                            string dat = buf.substr( lpos + 1, rpos - ( lpos + 1 ) );
 
-                            if ( rpos != string::npos )
-                            {
-                                string dat = buf.substr( lpos + 1, rpos - ( lpos + 1 ) );
-
-                                host_ = split( dat, 0, ":" );
-                                port_ = split( dat, 1, ":" );
-                                pssl_ = split( dat, 2, ":" );
-                            }
-                        }
-                    }
-
-                    //
-                    if ( ( pos = ucase( buf ).find( "DEFAULT_ADMIN_CONTEXT", 0 ) ) != string::npos )
-                    {
-                        size_t lpos = buf.find_first_of( "\"" );
-
-                        if ( lpos != string::npos )
-                        {
-                            size_t rpos = buf.find_first_of( "\"", lpos + 1 );
-
-                            if ( rpos != string::npos )
-                                root_ = trim( buf.substr( lpos + 1, rpos - ( lpos + 1 ) ) );
-                        }
-                    }
-
-                    //
-                    if ( ( pos = ucase( buf ).find( "DIRECTORY_SERVER_TYPE", 0 ) ) != string::npos )
-                    {
-                        size_t lpos = buf.find_first_of( "=" );
-
-                        if ( lpos != string::npos )
-                        {
-                            string typ = ucase( trim( buf.substr( lpos + 1 ) ) );
-
-                            if ( typ != "OID" )
-                                throw exp ( "Unsupported directory type [" + typ + "] encountered", EXP_UNSUPPORTED );
+                            store_.host = split( dat, 0, ":" );
+                            store_.port = ::atoi( split( dat, 1, ":" ).c_str() );
+                            store_.pssl = ::atoi( split( dat, 2, ":" ).c_str() );
                         }
                     }
                 }
-            }
-            catch ( exception& x )
-            {
-                throw exp ( "File [" + sqlnet_ + "] read error: "  + string( x.what() ), EXP_OPEN );
+
+                //
+                if ( ( pos = ucase( buf ).find( "DEFAULT_ADMIN_CONTEXT", 0 ) ) != string::npos )
+                {
+                    size_t lpos = buf.find_first_of( "\"" );
+
+                    if ( lpos != string::npos )
+                    {
+                        size_t rpos = buf.find_first_of( "\"", lpos + 1 );
+
+                        if ( rpos != string::npos )
+                            store_.root = trim( buf.substr( lpos + 1, rpos - ( lpos + 1 ) ) );
+                    }
+                }
+
+                //
+                if ( ( pos = ucase( buf ).find( "DIRECTORY_SERVER_TYPE", 0 ) ) != string::npos )
+                {
+                    size_t lpos = buf.find_first_of( "=" );
+
+                    if ( lpos != string::npos )
+                    {
+                        string typ = ucase( trim( buf.substr( lpos + 1 ) ) );
+
+                        if ( typ != "OID" )
+                            throw exp ( "Unsupported directory type [" + typ + "] encountered", EXP_UNSUPPORTED );
+                    }
+                }
             }
         }
+        catch ( exception& x )
+        {
+            throw exp ( "File [" + sqlnet_ + "] read error: "  + string( x.what() ), EXP_OPEN );
+        }
     }
+    else
+        throw exp ( "LDAP*Names file is missing or undefined!", EXP_MISSING );
 
-    return ( host_.length() > 0 );
+    return store_;
 }
 
 //
 size_t tns::load_ldap()
 {
-    if ( ldap_.length() > 0 )
+    if ( mesg() )
     {
-        if ( mesg() )
+        //
+        char* dn = NULL;
+        char* pw = NULL;
+
+        //
+        string url;
+        int rc = LDAP_SUCCESS;
+
+        try
         {
-            string url;
-            int rc = LDAP_SUCCESS;
+            if ( ! store_.ok() )
+                store_ = resolve_directory();
 
-            try
+            if ( store_.ok() )
             {
-                if ( resolve_directory() )
+                LDAP *ld;
+
+                //
+                url = store_.url();
+
+                //
+                if ( ( ld = ::ldap_init( (char*)store_.host.c_str(), store_.port ) ) != NULL )
                 {
-                    LDAP *ld;
+                    // use the first element for sorting
+                    const char* attrs[]  = { ATTR_VAL_CN, ATTR_VAL_DESC, ATTR_VAL_ALIAS, NULL };
+                    const char  filter[] = LDAP_SEARCH;
+                    struct timeval tv    = { 1, 0 };
+                    LDAPMessage* res     = NULL;
+
 
                     //
-                    url = "ldap://" + host_ + ":" + port_;
-
-                    //
-                    if ( ( ld = ::ldap_init( (char*)host_.c_str(), ::atoi( port_.c_str() ) ) ) != NULL )
+                    if ( store_.dn.length() > 0 )
                     {
-                        // use the first element for sorting
-                        const char* attrs[]  = { ATTR_VAL_CN, ATTR_VAL_DESC, ATTR_VAL_ALIAS, NULL };
-                        const char  filter[] = LDAP_SEARCH;
-                        struct timeval tv    = { 1, 0 };
-                        LDAPMessage* res     = NULL;
+                        dn = (char*)::malloc( sizeof( char ) * ( store_.dn.length() + 1 ) );
+                        ::memset( dn, 0, sizeof(char) * ( store_.dn.length() + 1 ) );
 
-                        if ( ( rc = ::ldap_simple_bind_s( ld, NULL, NULL ) ) != LDAP_SUCCESS )
-                            throw exp ( "LDAP anonymous bind failed: " + string( ::ldap_err2string( rc ) ), rc );
+                        ::memcpy( dn, store_.dn.c_str(), ( store_.dn.length() + 1 ) );
+                    }
+
+                    //
+                    if ( store_.pw.length() > 0 )
+                    {
+                        pw = (char*)::malloc( sizeof( char ) * ( store_.pw.length() + 1 ) );
+                        ::memset( pw, 0, sizeof(char) * ( store_.pw.length() + 1 ) );
+
+                        ::memcpy( pw, store_.pw.c_str(), ( store_.pw.length() + 1 ) );
+                    }
+
+                    //
+                    if ( ( rc = ::ldap_simple_bind_s( ld, dn, pw ) ) != LDAP_SUCCESS )
+                        throw exp ( "LDAP anonymous bind failed: " + string( ::ldap_err2string( rc ) ), rc );
+
+                    //
+                    if ( ( rc = ::ldap_search_ext_s( ld,
+                                                     (char*)((store_.root.length() == 0 ) ? "" : store_.root.c_str()),
+                                                     LDAP_SCOPE_SUBTREE,
+                                                     (char*)filter,
+                                                     (char**)attrs,
+                                                     0,
+                                                     NULL,
+                                                     NULL,
+                                                     &tv,
+                                                     LDAP_NO_LIMIT,
+                                                     &res ) ) == LDAP_SUCCESS )
+                    {
+                        LDAPMessage* ent = NULL;
+                        BerElement*  ber = NULL;
 
                         //
-                        if ( ( rc = ::ldap_search_ext_s( ld,
-                                                         (char*)((root_.length() == 0 ) ? "" : root_.c_str()),
-                                                         LDAP_SCOPE_SUBTREE,
-                                                         (char*)filter,
-                                                         (char**)attrs,
-                                                         0,
-                                                         NULL,
-                                                         NULL,
-                                                         &tv,
-                                                         LDAP_NO_LIMIT,
-                                                         &res ) ) == LDAP_SUCCESS )
+                        ::ldap_sort_entries( ld, &res, (char*)attrs[ ATTR_IDX_CN ], (int(*)())::strcmp );
+
+                        //
+                        for ( ent = ::ldap_first_entry( ld, res );
+                              ent != NULL;
+                              ent = ::ldap_next_entry( ld, ent ) )
                         {
-                            LDAPMessage* ent = NULL;
-                            BerElement*  ber = NULL;
+                            char* dn   = NULL;
+                            char* attr = NULL;
+                            entry itm;
 
                             //
-                            ::ldap_sort_entries( ld, &res, (char*)attrs[ ATTR_IDX_CN ], (int(*)())::strcmp );
+                            itm.type = entry::LDAP;
 
                             //
-                            for ( ent = ::ldap_first_entry( ld, res );
-                                  ent != NULL;
-                                  ent = ::ldap_next_entry( ld, ent ) )
+                            if ( ( dn = ::ldap_get_dn( ld, ent ) ) != NULL )
                             {
-                                char* dn   = NULL;
-                                char* attr = NULL;
-                                entry itm;
-
                                 //
-                                itm.type = entry::LDAP;
-
-                                //
-                                if ( ( dn = ::ldap_get_dn( ld, ent ) ) != NULL )
+                                for ( attr = ::ldap_first_attribute( ld, ent, &ber );
+                                      attr != NULL;
+                                      attr = ::ldap_next_attribute( ld, ent, ber ) )
                                 {
-                                    //
-                                    for ( attr = ::ldap_first_attribute( ld, ent, &ber );
-                                          attr != NULL;
-                                          attr = ::ldap_next_attribute( ld, ent, ber ) )
-                                    {
-                                        char** vals;
+                                    char** vals;
 
-                                        if ( ( vals = ::ldap_get_values( ld, ent, attr ) ) != NULL )
+                                    if ( ( vals = ::ldap_get_values( ld, ent, attr ) ) != NULL )
+                                    {
+                                        //
+                                        // (*sortval)( ld, vals, ::strcmp );
+
+                                        //
+                                        for ( int idx = 0; vals[ idx ] != NULL; idx++ )
                                         {
                                             //
-                                            // (*sortval)( ld, vals, ::strcmp );
-
-                                            //
-                                            for ( int idx = 0; vals[ idx ] != NULL; idx++ )
+                                            if ( format( string( attr ) ) == format( string( ATTR_VAL_CN ) ) )
                                             {
-                                                //
-                                                if ( format( string( attr ) ) == format( string( ATTR_VAL_CN ) ) )
-                                                {
-                                                    if ( itm.name.length() == 0 )
-                                                        itm.name = format( vals[ idx ] );
-                                                }
-
-                                                if ( format( string( attr ) ) == format( string( ATTR_VAL_ALIAS ) ) )
+                                                if ( itm.name.length() == 0 )
                                                     itm.name = format( vals[ idx ] );
-
-                                                if ( format( string( attr ) ) == format( string( ATTR_VAL_DESC ) ) )
-                                                    itm.desc = format( vals[ idx ] );
                                             }
 
-                                            //
-                                            ::ldap_value_free( vals );
+                                            if ( format( string( attr ) ) == format( string( ATTR_VAL_ALIAS ) ) )
+                                                itm.name = format( vals[ idx ] );
+
+                                            if ( format( string( attr ) ) == format( string( ATTR_VAL_DESC ) ) )
+                                                itm.desc = format( vals[ idx ] );
                                         }
 
                                         //
-                                        ::ldap_memfree( attr );
+                                        ::ldap_value_free( vals );
                                     }
 
-                                    ::ldap_memfree( dn );
+                                    //
+                                    ::ldap_memfree( attr );
                                 }
-                                else
-                                    cerr << "NULL DN encountered" << endl;
 
-                                //
-                                ::ber_free( ber, 0 );
-
-                                //
-                                if ( ( itm.name.length() > 0  ) && ( itm.desc.length() > 0 ) )
-                                    add( itm );
+                                ::ldap_memfree( dn );
                             }
+                            else
+                                cerr << "NULL DN encountered" << endl;
+
+                            //
+                            ::ber_free( ber, 0 );
+
+                            //
+                            if ( ( itm.name.length() > 0  ) && ( itm.desc.length() > 0 ) )
+                                add( itm );
                         }
-                        else
-                            throw exp ( "LDAP search failed: " + string( ::ldap_err2string( rc ) ), rc );
                     }
                     else
-                    {
-                        throw exp ( "LDAP initialization failed", rc );
-                    }
+                        throw exp ( "LDAP search failed: " + string( ::ldap_err2string( rc ) ), rc );
                 }
                 else
-                    throw exp ( "Unresolved directory information", EXP_UNRESOLVED );
+                {
+                    throw exp ( "LDAP initialization failed", rc );
+                }
             }
-            catch ( exp& x )
-            {
-                // report but don;t throw, for now
-                cerr << url << " - " << x.what() << " [" << rc << "]" << endl << endl;
-            }
+            else
+                throw exp ( "Unresolved directory information", EXP_UNRESOLVED );
         }
-        else
-            cerr << MISSING_MESG_FILE << endl << endl;
+        catch ( exp& x )
+        {
+            // report but don;t throw, for now
+            cerr << url << " - " << x.what() << " [" << rc << "]" << endl << endl;
+        }
+
+        //
+        if ( dn )
+            ::free( dn );
+
+        //
+        if ( pw )
+            ::free( pw );
     }
     else
-        throw exp ( "LDAP*Names file is missing or undefined!", EXP_MISSING );
+        cerr << MISSING_MESG_FILE << endl << endl;
 
     //
-    return 0;
+    return entries_.size();
 }
 
 //
@@ -874,7 +916,7 @@ string tns::format( string str )
     str.erase( remove( str.begin(), str.end(), '\n' ), str.end() );
     str.erase( remove( str.begin(), str.end(), '\t' ), str.end() );
 
-    return trim( ucase( str ) );
+    return trim( str );
 }
 
 //
@@ -921,7 +963,7 @@ string tns::compare( string dsc )
     return ent;
 }
 
-
+//
 string tns::tnsnames()
 {
     if ( tnsnames_.length() == 0 )
@@ -945,6 +987,7 @@ string tns::tnsnames()
     return tnsnames_; 
 }
 
+//
 string tns::sqlnet()
 {
     if ( sqlnet_.length() == 0 )
@@ -968,6 +1011,7 @@ string tns::sqlnet()
     return sqlnet_; 
 }
 
+//
 string tns::ldap()
 {
     if ( ldap_.length() == 0 )
@@ -1009,6 +1053,7 @@ string tns::tnsnames( string filename )
     return tnsnames_;
 }
 
+//
 string tns::sqlnet( string filename )
 {
     if ( filename.length() == 0 )
@@ -1026,6 +1071,7 @@ string tns::sqlnet( string filename )
     return sqlnet_;
 }
 
+//
 string tns::ldap( string filename )
 {
     if ( filename.length() == 0 )
@@ -1041,5 +1087,56 @@ string tns::ldap( string filename )
     }
 
     return ldap_;
+}
+
+//
+void tns::sort_entries( entries& ent )
+{
+    std::sort( ent.begin(), ent.end() );
+}
+
+string tns::pretty( entry& ent )
+{
+    string dat;
+    string dsc = ent.desc;
+    int    pad = 0;
+
+    dat  = ent.name + " =";
+
+    for ( int i = 0; i < dsc.length(); ++i )
+    {
+        if ( dsc[ i ] == ')' ) --pad;
+
+        if ( dsc[ i ] == '(' )
+        {
+            dat += NL;
+
+            ++pad;
+            for ( int p = 0; p < pad; ++p )
+                dat += PADDING;
+        }
+
+        dat += dsc[ i ];
+    }
+
+    return dat;
+}
+
+//
+tns::store tns::ldapstore()
+{
+    //
+    return store_;
+}
+
+//
+tns::store tns::ldapstore( tns::store sto )
+{
+    //
+    tns::store old = store_; 
+
+    //
+    store_ = sto; 
+    return old;
 }
 

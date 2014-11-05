@@ -48,7 +48,7 @@ class app
 
     bool ok() { return ok_; }
 
-    void print();
+    int run();
 
     protected:
     private:
@@ -59,6 +59,7 @@ class app
         std::string ldpfile_;
         std::string tnsfile_;
         std::string format_;
+        std::string base_;
         bool        sort_;
 
         //

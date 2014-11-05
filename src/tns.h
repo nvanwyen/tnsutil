@@ -19,16 +19,14 @@
 // c++
 #include <string>
 #include <vector>
-#include <cctype>
-#include <stdexcept>
-#include <algorithm>
-#include <functional>
 
 // boost
 #include <boost/shared_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 // local
 #include "exp.h"
+#include "uri.h"
 
 //
 using namespace std;
@@ -94,6 +92,18 @@ class tns
                     return t;
                 }
 
+                //
+                bool operator<( const entry& ent ) const
+                {
+                    return name < ent.name;
+                }
+
+                //
+                bool operator>( const entry& ent ) const
+                {
+                    return ( ! operator<( ent ) );
+                }
+
             protected:
             private:
         };
@@ -106,7 +116,90 @@ class tns
         typedef vector<string>::iterator method;
 
         //
-        tns() {};
+        class store
+        {
+            //
+            public:
+                //
+                string host;
+                int    port;
+                int    pssl;
+                string root;
+                //
+                bool   secure;
+                //
+                string dn;
+                string pw;
+        
+                //
+                store()
+                    : host( "" ), port( 0 ), pssl( 0 ), secure( false ), root( "" ) {}
+        
+                store( string h, int p )
+                    : host( h ),  port( p ), pssl( 0 ), secure( false ), root( "" ) {}
+        
+                store( string h, int p, bool s )
+                    : host( h ),  port( p ), pssl( 0 ), secure( s ),     root( "" ) {}
+        
+                store( string h, int p, bool s, string r )
+                    : host( h ),  port( p ), pssl( 0 ), secure( s ),     root( r )  {}
+        
+                //
+                store( string u ) { url( u ); }
+        
+                //
+                ~store() {}
+        
+                //
+                void url( string u )
+                {
+                    uri i( u ); 
+        
+                    //
+                    host = i.host();
+                    port = i.port();
+        
+                    //
+                    if ( i.protocol().substr( i.protocol().length() - 1 ) == "s" )
+                        secure = true;
+                }
+        
+                //
+                string url()
+                {
+                    string u;
+        
+                    //
+                    if ( ! ok() )
+                        throw exp( "Invalid ldap store object!", EXP_INVALID );
+        
+                    //
+                    u = ( ( secure ) ? "ldaps" : "ldap" ) 
+                           + string( "://" ) 
+                           + host;
+        
+                    //
+                    if ( ! ( ( secure && ( port == 636 ) ) || ( ! secure && ( port == 389 ) ) ) )
+                    {
+                        u += string( ":" ) 
+                           + boost::lexical_cast<string>( port );
+                    }
+        
+                    return u;
+                }
+        
+                //
+                bool ok()
+                {
+                    return ( ( host.length() > 0 ) && ( port > 0 ) );
+                }
+
+            protected:
+            private:
+        };
+        
+        //
+        tns() {}
         ~tns() {}
 
         //
@@ -114,17 +207,19 @@ class tns
 
         //
         string sqlnet();
-
-        //
-        string tnsnames();
-        string ldap();
-
-        //
         string sqlnet( string filename );
 
         //
+        string tnsnames();
         string tnsnames( string filename );
+
+        //
+        string ldap();
         string ldap( string filename );
+
+        //
+        store ldapstore();
+        store ldapstore( store sto );
 
         //
         size_t load_methods();
@@ -136,6 +231,15 @@ class tns
         //
         methods tns_methods() { return methods_; }
         entries tns_entries() { return entries_; }
+
+        //
+        void sort_entries( entries& ent );
+
+        //
+        string pretty( entry& ent );
+
+        //
+        store resolve_directory();
 
     protected:
     private:
@@ -149,10 +253,10 @@ class tns
         string tnsnames_;
         string ldap_;
 
+        // ldap store
+        tns::store store_;
+
         // ldap.ora
-        string host_;                   // ldap host
-        string port_;                   // ldap port
-        string pssl_;                   // ldaps port
         string root_;                   // root context
 
         // sqlnet.ora
@@ -191,8 +295,6 @@ class tns
         //
         string locate( string name );   // find a file based on the TNS search order
 
-        //
-        bool resolve_directory();
 
         //
         string format( string str );
