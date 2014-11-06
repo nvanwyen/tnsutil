@@ -174,6 +174,9 @@ int app::run()
             //
             if ( tns_->load_tnsnames() > 0 )
             {
+                int prc = 0;
+                int err = 0;
+
                 //
                 tns::entries ent = tns_->tns_entries();
 
@@ -182,8 +185,13 @@ int app::run()
                 {
                     //
                     if ( ! tns_->save_ldap( (*i), replace_ ) )
-                        break;
+                        ++err;
+
+                    ++prc;
                 }
+
+                //
+                cout << "Processed " << prc << " item(s), with " << err << " error(s)\n";
             }
             else
                 cerr << "No TNS entries found!\n";

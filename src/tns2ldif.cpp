@@ -155,6 +155,9 @@ int app::run()
                 //
                 ldif << endl;
             }
+
+            //
+            cout << "Processed " << ent.size() << " item(s)\n";
         }
         else
         {

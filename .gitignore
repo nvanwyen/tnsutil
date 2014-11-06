@@ -42,3 +42,7 @@ pull.mtissh
 
 # IDE
 .idea
+
+# Pre-Build bundles
+bundle
+bundle.sh

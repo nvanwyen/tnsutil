@@ -139,6 +139,9 @@ int app::run()
 
                 //
                 tnsfile << endl;
+
+                //
+                cout << "Processed " << ent.size() << " item(s)\n";
             }
         }
         else
