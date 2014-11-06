@@ -209,6 +209,10 @@ class tns
         entry& find( string ent );
 
         //
+        string tnsadmin();
+        string tnsadmin( string dir );
+
+        //
         string sqlnet();
         string sqlnet( string filename );
 
@@ -235,7 +239,7 @@ class tns
         size_t load_ldif( streambuf* buf );
 
         //
-        int save_ldap( entry& ent, bool del = true );
+        bool save_ldap( entry& ent, bool repl = true );
 
         //
         methods tns_methods() { return methods_; }
@@ -254,6 +258,9 @@ class tns
     private:
         //
         entry entry_;
+
+        //
+        string tnsadmin_;
 
         // files
         string sqlnet_;

@@ -191,7 +191,9 @@ include_directories("${Boost_INCLUDE_DIRS}")
 #
 include_directories("${ORACLE_INCLUDE_DIR}")
 
+# other
 add_definitions(-g)
+add_definitions(-Wno-write-strings)
 
 #
 colormsg(HIBLUE "Configuring TNS2LDIF source files")

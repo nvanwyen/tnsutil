@@ -72,6 +72,7 @@ class app
         std::string ldap_;
         std::string sqlnet_;
         //
+        bool        replace_;
         bool        sort_;
 
         //

@@ -396,6 +396,15 @@ int ldap_search_ext_s( LDAP *ld,
                        LDAPMessage **res);
 
 //
+int ldap_search_s( LDAP *ld, 
+                   char *base, 
+                   int scope, 
+                   char *filter,
+                   char **attrs, 
+                   int attrsonly, 
+                   LDAPMessage **res );
+
+//
 int ldap_result( LDAP *ld,
                  int msgid,
                  int all,

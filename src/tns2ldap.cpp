@@ -34,7 +34,7 @@ void usage()
     cout << "Usage: " << UTIL_APP << " options <tnsnames.ora>|<->\n";
     cout << "where:\n";
     cout << "   <tnsnames.ora>        : TNS Names input file\n";
-    cout << "   <->                   : input from stdin\n";
+    cout << "   <->                   : Find and use the $TNS_ADMIN/tnsnames.ora file\n";
     cout << "options:\n";
     cout << "    -D | --DN      <val> : Distinguished name of the LDAP account\n";
     cout << "   [-w | --passwd| <val> : Distinguished name password\n";
@@ -85,6 +85,7 @@ app::app( int c, char** v ) : tns_( new mti::tns() ),
                               admin_( "" ),
                               ldap_( "" ),
                               sqlnet_( "" ),
+                              replace_( false ),
                               sort_( true ),
                               ok_( false )
 {
@@ -117,16 +118,22 @@ int app::run()
         else
         {
             //
-            if ( ldap_.length() > 0 )
-                tns_->ldap( ldap_ );
+            if ( admin_.length() > 0 )
+            {
+            }
             else
-                tns_->ldap( tns_->ldap() );
+            {
+                if ( ldap_.length() > 0 )
+                    tns_->ldap( ldap_ );
+                else
+                    tns_->ldap( tns_->ldap() );
 
-            //
-            if ( sqlnet_.length() > 0 )
-                tns_->sqlnet( sqlnet_ );
-            else
-                tns_->sqlnet( tns_->sqlnet() );
+                //
+                if ( sqlnet_.length() > 0 )
+                    tns_->sqlnet( sqlnet_ );
+                else
+                    tns_->sqlnet( tns_->sqlnet() );
+            }
 
             //
             sto = tns_->resolve_directory();
@@ -134,36 +141,53 @@ int app::run()
     }
 
     //
-    if ( ! sto.ok() )
+    if ( root_.length() > 0 )
+        sto.root = root_;
+
+    //
+    if ( sto.root.length() == 0 )
     {
-        cerr << "The LDAP server information is missing or invalid!\n";
+        cerr << "The base information was not provide or could not be found\n";
         rc = 1;
     }
     else
     {
         //
-        if ( dn_.length() > 0 )
-            sto.dn = dn_;
-
-        //
-        if ( pw_.length() > 0 )
-            sto.pw = pw_;
-
-        //
-        tns_->ldapstore( sto );
-
-        //
-        if ( tns_->load_tnsnames() > 0 )
+        if ( ! sto.ok() )
         {
-            //
-            tns::entries ent = tns_->tns_entries();
-
-            // data
-            for ( tns::item i = ent.begin(); i != ent.end(); ++i )
-                tns_->save_ldap( (*i) );
+            cerr << "The LDAP server information is missing or invalid!\n";
+            rc = 1;
         }
         else
-            cerr << "No TNS entries found!\n";
+        {
+            //
+            if ( dn_.length() > 0 )
+                sto.dn = dn_;
+
+            //
+            if ( pw_.length() > 0 )
+                sto.pw = pw_;
+
+            //
+            tns_->ldapstore( sto );
+
+            //
+            if ( tns_->load_tnsnames() > 0 )
+            {
+                //
+                tns::entries ent = tns_->tns_entries();
+
+                //
+                for ( tns::item i = ent.begin(); i != ent.end(); ++i )
+                {
+                    //
+                    if ( ! tns_->save_ldap( (*i), replace_ ) )
+                        break;
+                }
+            }
+            else
+                cerr << "No TNS entries found!\n";
+        }
     }
 
     return rc;
@@ -222,15 +246,22 @@ bool app::options( int c, char** v )
             }
             else
             {
-                pw_ = "";
+                pw_ = password();
             }
         }
 
         //
-        if ( ( ( dn_.length() >  0 ) && ( pw_.length() == 0 ) )
-          || ( ( dn_.length() == 0 ) && ( pw_.length() >  0 ) ) )
+        if ( dn_.length() > 0 )
         {
-            cerr << "--DN [-D] and password [--passwd [-w] | --prompt [-q]] must be supplied together\n";
+            if ( pw_.length() == 0 )
+            {
+                cerr << "--DN [-D] usage requires password [--passwd [-w] | --prompt [-q]]\n";
+                return false;
+            }
+        }
+        else
+        {
+            cerr << "--DN [-D] is required\n";
             return false;
         }
 
@@ -238,15 +269,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'u', "url" ) )
         {
             //
-            if ( ops >> OptionPresent( 'u', "url" ) )
-            {
-                //
-                ops >> Option( 'u', "url",  url_ );
-            }
-            else
-            {
-                url_ = "";
-            }
+            ops >> Option( 'u', "url",  url_ );
         }
         else
             url_ = "";
@@ -255,15 +278,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'h', "host" ) )
         {
             //
-            if ( ops >> OptionPresent( 'h', "host" ) )
-            {
-                //
-                ops >> Option( 'h', "host",  host_ );
-            }
-            else
-            {
-                host_ = "";
-            }
+            ops >> Option( 'h', "host",  host_ );
         }
         else
             host_ = "";
@@ -272,15 +287,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'p', "port" ) )
         {
             //
-            if ( ops >> OptionPresent( 'p', "port" ) )
-            {
-                //
-                ops >> Option( 'p', "port",  port_ );
-            }
-            else
-            {
-                port_ = 0;
-            }
+            ops >> Option( 'p', "port",  port_ );
         }
         else
             port_ = 0;
@@ -289,32 +296,16 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'b', "base" ) )
         {
             //
-            if ( ops >> OptionPresent( 'b', "base" ) )
-            {
-                //
-                ops >> Option( 'b', "base",  root_ );
-            }
-            else
-            {
-                root_ = "";
-            }
+            ops >> Option( 'b', "base",  root_ );
         }
         else
-            root_ = "";
+            root_ = "cn=OracleContext";
 
         //
         if ( ops >> OptionPresent( 'a', "admin" ) )
         {
             //
-            if ( ops >> OptionPresent( 'a', "admin" ) )
-            {
-                //
-                ops >> Option( 'a', "admin",  admin_ );
-            }
-            else
-            {
-                admin_ = "";
-            }
+            ops >> Option( 'a', "admin",  admin_ );
         }
         else
             admin_ = "";
@@ -323,15 +314,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'l', "ldap" ) )
         {
             //
-            if ( ops >> OptionPresent( 'l', "ldap" ) )
-            {
-                //
-                ops >> Option( 'l', "ldap",  ldap_ );
-            }
-            else
-            {
-                ldap_ = "";
-            }
+            ops >> Option( 'l', "ldap",  ldap_ );
         }
         else
             ldap_ = "";
@@ -340,15 +323,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 's', "sqlnet" ) )
         {
             //
-            if ( ops >> OptionPresent( 's', "sqlnet" ) )
-            {
-                //
-                ops >> Option( 's', "sqlnet",  sqlnet_ );
-            }
-            else
-            {
-                sqlnet_ = "";
-            }
+            ops >> Option( 's', "sqlnet",  sqlnet_ );
         }
         else
             sqlnet_ = "";
@@ -390,6 +365,12 @@ bool app::options( int c, char** v )
         }
 
         //
+        if ( ops >> OptionPresent( 'r', "replace" ) )
+            replace_ = false;
+        else
+            replace_ = true;
+
+        //
         if ( ops >> OptionPresent( 'n', "nosort" ) )
             sort_ = false;
         else
@@ -408,6 +389,13 @@ bool app::options( int c, char** v )
         }
         else
             tnsfile_ = opt.at( 0 );
+
+        //
+        if ( tnsfile_ == "-" )
+            tnsfile_ = tns_->tnsnames();
+
+        //
+        tns_->tnsnames( tnsfile_ );
 
         //
         ops.end_of_options();

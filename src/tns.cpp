@@ -974,7 +974,29 @@ size_t tns::load_ldif( streambuf* dat )
 //
 bool tns::ldap_exists( LDAP* ld, char* dn )
 {
-    return false;
+    int rc = 0;
+
+    //
+    int cnt = 0;
+    LDAPMessage* msg;
+    char* qry = "(objectClass=*)";
+
+    //
+    if ( ( rc = ::ldap_search_s( ld, 
+                          dn,
+                          LDAP_SCOPE_BASE, 
+                          qry, 
+                          NULL, 
+                          0, 
+                          &msg ) ) != LDAP_SUCCESS )
+    {
+        cnt = 0;
+    }
+    else
+        cnt = ::ldap_count_entries( ld, msg );
+
+    //
+    return ( cnt > 0 );
 }
 
 //
@@ -998,7 +1020,7 @@ bool tns::ldap_delete( LDAP* ld, char* dn )
 }
 
 //
-int tns::save_ldap( entry& ent, bool del /*= true*/ )
+bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
 {
     int rc = LDAP_SUCCESS;
 
@@ -1025,7 +1047,6 @@ int tns::save_ldap( entry& ent, bool del /*= true*/ )
                 //
                 if ( ( ld = ::ldap_init( (char*)store_.host.c_str(), store_.port ) ) != NULL )
                 {
-                    bool ext = false;
                     string rdn = "cn=" + ent.name + "," + store_.root;
 
                     //
@@ -1049,59 +1070,130 @@ int tns::save_ldap( entry& ent, bool del /*= true*/ )
                         throw exp ( "LDAP bind failed: " + string( ::ldap_err2string( rc ) ), rc );
 
                     //
-                    if ( ( ext = ldap_exists( ld, (char*)rdn.c_str() ) ) )
+                    if ( ldap_exists( ld, (char*)store_.root.c_str() ) )
                     {
                         //
-                        if ( del )
-                            ext = !ldap_delete( ld, (char*)rdn.c_str() );
-                    }
+                        if ( ldap_exists( ld, (char*)rdn.c_str() ) )
+                        {
+                            //
+                            if ( repl )
+                            {
+                                char* nsv[] = { NULL, NULL };
 
-                    //
-                    if ( ext )
-                    {
-                        //
-                        char* obv[] = { "top", "orclService", "orclContainer", "orclNetService", NULL };
-                        char* cnv[] = { NULL, NULL };
-                        char* nsv[] = { NULL, NULL };
+                                //
+                                nsv[ 0 ] = (char*)::malloc( sizeof( char ) * ( ent.desc.length() + 1 ) );
+                                //
+                                ::memset( nsv[ 0 ], 0, sizeof(char) * ( ent.desc.length() + 1 ) );
+                                ::memcpy( nsv[ 0 ], ent.desc.c_str(), ( ent.desc.length() + 1 ) );
 
-                        //cnv[ 0 ] = (char*)ent.name.c_str();
-                        //nsv[ 0 ] = (char*)ent.desc.c_str();
+                                LDAPMod ns;
 
-                        //
-                        LDAPMod ob;
-                        LDAPMod cn;
-                        LDAPMod ns;
+                                //
+                                LDAPMod* mod[ 2 ] = { NULL, NULL };
 
-                        //
-                        LDAPMod* mod[ 4 ] = { NULL, NULL, NULL, NULL };
+                                //
+                                ns.mod_op     = LDAP_MOD_REPLACE;
+                                ns.mod_type   = "orclNetDescString";
+                                ns.mod_values = nsv;
 
-                        //
-                        ob.mod_op     = LDAP_MOD_ADD;
-                        ob.mod_type   = "objectclass";
-                        ob.mod_values = obv;
+                                //
+                                mod[ 0 ] = &ns;
+                                mod[ 1 ] = NULL;
 
-                        //
-                        cn.mod_op     = LDAP_MOD_ADD;
-                        cn.mod_type   = "cn";
-                        cn.mod_values = cnv;
+                                //
+                                try
+                                {
+                                    //
+                                    if (  ( rc = ::ldap_modify_s( ld, (char*)rdn.c_str(), mod ) ) != LDAP_SUCCESS )
+                                        throw exp ( "LDAP modify failed: " + string( ::ldap_err2string( rc ) ), rc );
 
-                        //
-                        ns.mod_op     = LDAP_MOD_ADD;
-                        ns.mod_type   = "orclNetDescString";
-                        ns.mod_values = nsv;
+                                    //
+                                    if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
+                                }
+                                catch ( exp& x )
+                                {
+                                    //
+                                    if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
 
-                        //
-                        mod[ 0 ] = &ob;
-                        mod[ 1 ] = &cn;
-                        mod[ 2 ] = &ns;
-                        mod[ 3 ] = NULL;
+                                    //
+                                    throw;
+                                }
+                            }
+                            else
+                                throw exp ( "LDAP modify did replace existing entry [" + rdn + "]!", EXP_EXISTS );
+                        }
+                        else
+                        {
+                            //
+                            char* obv[] = { "top", "orclService", "orclContainer", "orclNetService", NULL };
+                            char* cnv[] = { NULL, NULL };
+                            char* nsv[] = { NULL, NULL };
 
-                        //
-                        if (  ( rc = ::ldap_add_s( ld, (char*)rdn.c_str(), mod ) ) != LDAP_SUCCESS )
-                            throw exp ( "LDAP add failed: " + string( ::ldap_err2string( rc ) ), rc );
+                            //
+                            cnv[ 0 ] = (char*)::malloc( sizeof( char ) * ( ent.name.length() + 1 ) );
+                            nsv[ 0 ] = (char*)::malloc( sizeof( char ) * ( ent.desc.length() + 1 ) );
+
+                            //
+                            ::memset( cnv[ 0 ], 0, sizeof(char) * ( ent.name.length() + 1 ) );
+                            ::memset( nsv[ 0 ], 0, sizeof(char) * ( ent.desc.length() + 1 ) );
+
+                            //
+                            ::memcpy( cnv[ 0 ], ent.name.c_str(), ( ent.name.length() + 1 ) );
+                            ::memcpy( nsv[ 0 ], ent.desc.c_str(), ( ent.desc.length() + 1 ) );
+
+                            //
+                            LDAPMod ob;
+                            LDAPMod cn;
+                            LDAPMod ns;
+
+                            //
+                            LDAPMod* mod[ 4 ] = { NULL, NULL, NULL, NULL };
+
+                            //
+                            ob.mod_op     = LDAP_MOD_ADD;
+                            ob.mod_type   = "objectclass";
+                            ob.mod_values = obv;
+
+                            //
+                            cn.mod_op     = LDAP_MOD_ADD;
+                            cn.mod_type   = "cn";
+                            cn.mod_values = cnv;
+
+                            //
+                            ns.mod_op     = LDAP_MOD_ADD;
+                            ns.mod_type   = "orclNetDescString";
+                            ns.mod_values = nsv;
+
+                            //
+                            mod[ 0 ] = &ob;
+                            mod[ 1 ] = &cn;
+                            mod[ 2 ] = &ns;
+                            mod[ 3 ] = NULL;
+
+                            //
+                            try
+                            {
+                                //
+                                if (  ( rc = ::ldap_add_s( ld, (char*)rdn.c_str(), mod ) ) != LDAP_SUCCESS )
+                                    throw exp ( "LDAP add failed: " + string( ::ldap_err2string( rc ) ), rc );
+
+                                //
+                                if ( cnv[ 0 ] ) ::free( cnv[ 0 ] );
+                                if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
+                            }
+                            catch ( exp& x )
+                            {
+                                //
+                                if ( cnv[ 0 ] ) ::free( cnv[ 0 ] );
+                                if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
+
+                                //
+                                throw;
+                            }
+                        }
                     }
                     else
-                        throw exp ( "Cannot replace existing LDAP entry [" + rdn + "]", EXP_EXISTS );
+                        throw exp ( "LDAP base entry does not exist [" + store_.root + "]", EXP_EXISTS );
                 }
                 else
                 {
@@ -1133,7 +1225,7 @@ int tns::save_ldap( entry& ent, bool del /*= true*/ )
         cerr << MISSING_MESG_FILE << endl << endl;
 
     //
-    return rc;
+    return ( rc == LDAP_SUCCESS );
 }
 
 //
@@ -1213,6 +1305,82 @@ string tns::tnsnames()
     }
 
     return tnsnames_; 
+}
+
+//
+string tns::tnsadmin()
+{
+//     if ( tnsadmin_.length() == 0 )
+//     {
+//         if ( env( "TNS_ADMIN" ).length() > 0 )
+//         {
+//          //
+// #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
+//          if ( exists( env( "TNS_ADMIN" ) + "/" + name ) )
+//              file = env( "TNS_ADMIN" ) + "/" + name;
+// #else
+//          if ( exists( env( "TNS_ADMIN" ) + "\\" + name ) )
+//              file = env( "TNS_ADMIN" ) + "\\" + name;
+// #endif
+// 	    }
+// 
+//         // $ORACLE_HOME/network/admin/<file>
+//         //
+//         if  ( file.length() == 0 )
+//         {
+//             if ( env( "ORACLE_HOME" ).length() > 0 )
+//             {
+//                 //
+// #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
+//                 if ( exists( env( "ORACLE_HOME" ) + "/" + name ) )
+//                     file = env( "ORACLE_HOME" ) + "/" + name;
+// #else
+//                 if ( exists( env( "ORACLE_HOME" ) + "\\" + name ) )
+//                     file = env( "ORACLE_HOME" ) + "\\" + name;
+// #endif
+// 		    }
+//         }
+// 
+//         // /etc/oracle/<file>
+//         //
+//         if ( file.length() == 0 )
+//         {
+//         //
+// #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
+//             if ( exists( string( ETC_DIR ) + "/" + name ) )
+//                 file = string( ETC_DIR ) + "/" + name;
+// #else
+//             if ( exists( string( ETC_DIR ) + "\\" + name ) )
+//                 file = string( ETC_DIR ) + "\\" + name;
+// #endif
+// 	    }
+// 
+//     // $HOME/.<file>
+//     //
+//         if ( file.length() == 0 )
+//         {
+//             if ( env( "HOME" ).length() > 0 )
+//             {
+//             //
+// #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
+//                 if ( exists( env( "HOME" ) + "/." + name ) )
+//                     file = env( "HOME" ) + "/." + name;
+// #else
+//                 if ( exists( env( "HOME" ) + "\\." + name ) )
+//                     file = env( "HOME" ) + "\\." + name;
+// #endif
+// 		    }
+//         }
+//     }
+
+    return tnsadmin_;
+}
+
+//
+string tns::tnsadmin( string dir )
+{
+    tnsadmin_ = dir;
+    return tnsadmin_;
 }
 
 //

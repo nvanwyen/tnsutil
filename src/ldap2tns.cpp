@@ -283,15 +283,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'u', "url" ) )
         {
             //
-            if ( ops >> OptionPresent( 'u', "url" ) )
-            {
-                //
-                ops >> Option( 'u', "url",  url_ );
-            }
-            else
-            {
-                url_ = "";
-            }
+            ops >> Option( 'u', "url",  url_ );
         }
         else
             url_ = "";
@@ -300,15 +292,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'h', "host" ) )
         {
             //
-            if ( ops >> OptionPresent( 'h', "host" ) )
-            {
-                //
-                ops >> Option( 'h', "host",  host_ );
-            }
-            else
-            {
-                host_ = "";
-            }
+            ops >> Option( 'h', "host",  host_ );
         }
         else
             host_ = "";
@@ -317,15 +301,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'p', "port" ) )
         {
             //
-            if ( ops >> OptionPresent( 'p', "port" ) )
-            {
-                //
-                ops >> Option( 'p', "port",  port_ );
-            }
-            else
-            {
-                port_ = 0;
-            }
+            ops >> Option( 'p', "port",  port_ );
         }
         else
             port_ = 0;
@@ -334,15 +310,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'b', "base" ) )
         {
             //
-            if ( ops >> OptionPresent( 'b', "base" ) )
-            {
-                //
-                ops >> Option( 'b', "base",  root_ );
-            }
-            else
-            {
-                root_ = "";
-            }
+            ops >> Option( 'b', "base",  root_ );
         }
         else
             root_ = "";
@@ -351,15 +319,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'a', "admin" ) )
         {
             //
-            if ( ops >> OptionPresent( 'a', "admin" ) )
-            {
-                //
-                ops >> Option( 'a', "admin",  admin_ );
-            }
-            else
-            {
-                admin_ = "";
-            }
+            ops >> Option( 'a', "admin",  admin_ );
         }
         else
             admin_ = "";
@@ -368,15 +328,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 'l', "ldap" ) )
         {
             //
-            if ( ops >> OptionPresent( 'l', "ldap" ) )
-            {
-                //
-                ops >> Option( 'l', "ldap",  ldap_ );
-            }
-            else
-            {
-                ldap_ = "";
-            }
+            ops >> Option( 'l', "ldap",  ldap_ );
         }
         else
             ldap_ = "";
@@ -385,15 +337,7 @@ bool app::options( int c, char** v )
         if ( ops >> OptionPresent( 's', "sqlnet" ) )
         {
             //
-            if ( ops >> OptionPresent( 's', "sqlnet" ) )
-            {
-                //
-                ops >> Option( 's', "sqlnet",  sqlnet_ );
-            }
-            else
-            {
-                sqlnet_ = "";
-            }
+            ops >> Option( 's', "sqlnet",  sqlnet_ );
         }
         else
             sqlnet_ = "";
