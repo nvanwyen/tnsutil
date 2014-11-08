@@ -60,6 +60,7 @@ class app
         std::string ldpfile_;
         //
         bool        sort_;
+        bool        backup_;
 
         //
         mti::tnsnames tns_;

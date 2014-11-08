@@ -20,12 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-#include <sys/stat.h>
-#else
-#include <windows.h>
-#endif
-
 // c++
 #include <cctype>
 #include <sstream>
@@ -41,6 +35,12 @@
 #include "env.h"
 #include "tns.h"
 #include "ldp.h"
+#include "ver.h"
+
+//
+#if defined(DOS) || defined(WINDOWS) || defined(WIN32) || defined(_WIN32) || defined(WINSOCK)
+#pragma warning( disable : 4018 )
+#endif
 
 //
 #define ATTR_IDX_CN                 0
@@ -202,9 +202,9 @@ bool tns::mesg()
 
     // Looking for the message file $ORACLE_HOME/ldap/mesg/ldapus.msb
 #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-    return exists( env( "ORACLE_HOME" ) + "/ldap/mesg/ldapus.msb" );
+    return ::exists( env( "ORACLE_HOME" ) + "/ldap/mesg/ldapus.msb" );
 #else
-    return exists( env( "ORACLE_HOME" ) + "\\ldap\\mesg\\ldapus.msb" );
+    return ::exists( env( "ORACLE_HOME" ) + "\\ldap\\mesg\\ldapus.msb" );
 #endif
 }
 
@@ -348,41 +348,6 @@ string tns::env( string var )
 }
 
 //
-bool tns::exists( string file )
-{
-    bool ok = false;
-
-#if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-	struct stat stat;
-
-    //
-    if ( ::stat( file.c_str(), &stat ) == 0 )
-    {
-        if ( S_ISREG( stat.st_mode ) || S_ISLNK( stat.st_mode ) )
-            ok = true;
-    }
-#else
-	WIN32_FIND_DATA dat;
-	HANDLE hdl = NULL;
-	wstring tmp = wstring( file.begin(), file.end() );
-
-
-	if ( ( hdl = ::FindFirstFile( tmp.c_str(), &dat ) ) != INVALID_HANDLE_VALUE )
-	{
-		::FindClose( hdl );
-		ok = true;
-	}
-	else
-	{
-		ok = false;
-	}
-#endif // !define...
-
-	//
-    return ok;
-}
-
-//
 string tns::locate( string name )
 {
     string file;
@@ -400,10 +365,10 @@ string tns::locate( string name )
     {
         //
 #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-        if ( exists( env( "TNS_ADMIN" ) + "/" + name ) )
+        if ( ::exists( env( "TNS_ADMIN" ) + "/" + name ) )
             file = env( "TNS_ADMIN" ) + "/" + name;
 #else
-        if ( exists( env( "TNS_ADMIN" ) + "\\" + name ) )
+        if ( ::exists( env( "TNS_ADMIN" ) + "\\" + name ) )
             file = env( "TNS_ADMIN" ) + "\\" + name;
 #endif
 	}
@@ -416,10 +381,10 @@ string tns::locate( string name )
         {
             //
 #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-            if ( exists( env( "ORACLE_HOME" ) + "/" + name ) )
+            if ( ::exists( env( "ORACLE_HOME" ) + "/" + name ) )
                 file = env( "ORACLE_HOME" ) + "/" + name;
 #else
-            if ( exists( env( "ORACLE_HOME" ) + "\\" + name ) )
+            if ( ::exists( env( "ORACLE_HOME" ) + "\\" + name ) )
                 file = env( "ORACLE_HOME" ) + "\\" + name;
 #endif
 		}
@@ -431,10 +396,10 @@ string tns::locate( string name )
     {
         //
 #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-        if ( exists( string( ETC_DIR ) + "/" + name ) )
+        if ( ::exists( string( ETC_DIR ) + "/" + name ) )
             file = string( ETC_DIR ) + "/" + name;
 #else
-        if ( exists( string( ETC_DIR ) + "\\" + name ) )
+        if ( ::exists( string( ETC_DIR ) + "\\" + name ) )
             file = string( ETC_DIR ) + "\\" + name;
 #endif
 	}
@@ -447,10 +412,10 @@ string tns::locate( string name )
         {
             //
 #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-            if ( exists( env( "HOME" ) + "/." + name ) )
+            if ( ::exists( env( "HOME" ) + "/." + name ) )
                 file = env( "HOME" ) + "/." + name;
 #else
-            if ( exists( env( "HOME" ) + "\\." + name ) )
+            if ( ::exists( env( "HOME" ) + "\\." + name ) )
                 file = env( "HOME" ) + "\\." + name;
 #endif
 		}
@@ -579,8 +544,13 @@ size_t tns::load_tnsnames()
                     //
                     if ( buf.substr( 0, 1 ) == "#" )
                     {
-                        // reset on comment line
-                        ent = dsc = ""; flg = true; lvl = 0;
+                        // reset on comment line, if we are not on an in-line comment
+                        if ( flg )
+                        {
+                            ent = dsc = ""; flg = true; lvl = 0;
+                        }
+
+                        //
                         continue;
                     }
 
@@ -1110,7 +1080,7 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                                     //
                                     if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
                                 }
-                                catch ( exp& x )
+                                catch ( exp& )
                                 {
                                     //
                                     if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
@@ -1181,7 +1151,7 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                                 if ( cnv[ 0 ] ) ::free( cnv[ 0 ] );
                                 if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
                             }
-                            catch ( exp& x )
+                            catch ( exp& )
                             {
                                 //
                                 if ( cnv[ 0 ] ) ::free( cnv[ 0 ] );
@@ -1316,10 +1286,10 @@ string tns::tnsadmin()
 //         {
 //          //
 // #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-//          if ( exists( env( "TNS_ADMIN" ) + "/" + name ) )
+//          if ( ::exists( env( "TNS_ADMIN" ) + "/" + name ) )
 //              file = env( "TNS_ADMIN" ) + "/" + name;
 // #else
-//          if ( exists( env( "TNS_ADMIN" ) + "\\" + name ) )
+//          if ( ::exists( env( "TNS_ADMIN" ) + "\\" + name ) )
 //              file = env( "TNS_ADMIN" ) + "\\" + name;
 // #endif
 // 	    }
@@ -1332,10 +1302,10 @@ string tns::tnsadmin()
 //             {
 //                 //
 // #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-//                 if ( exists( env( "ORACLE_HOME" ) + "/" + name ) )
+//                 if ( ::exists( env( "ORACLE_HOME" ) + "/" + name ) )
 //                     file = env( "ORACLE_HOME" ) + "/" + name;
 // #else
-//                 if ( exists( env( "ORACLE_HOME" ) + "\\" + name ) )
+//                 if ( ::exists( env( "ORACLE_HOME" ) + "\\" + name ) )
 //                     file = env( "ORACLE_HOME" ) + "\\" + name;
 // #endif
 // 		    }
@@ -1347,10 +1317,10 @@ string tns::tnsadmin()
 //         {
 //         //
 // #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-//             if ( exists( string( ETC_DIR ) + "/" + name ) )
+//             if ( ::exists( string( ETC_DIR ) + "/" + name ) )
 //                 file = string( ETC_DIR ) + "/" + name;
 // #else
-//             if ( exists( string( ETC_DIR ) + "\\" + name ) )
+//             if ( ::exists( string( ETC_DIR ) + "\\" + name ) )
 //                 file = string( ETC_DIR ) + "\\" + name;
 // #endif
 // 	    }
@@ -1363,10 +1333,10 @@ string tns::tnsadmin()
 //             {
 //             //
 // #if !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
-//                 if ( exists( env( "HOME" ) + "/." + name ) )
+//                 if ( ::exists( env( "HOME" ) + "/." + name ) )
 //                     file = env( "HOME" ) + "/." + name;
 // #else
-//                 if ( exists( env( "HOME" ) + "\\." + name ) )
+//                 if ( ::exists( env( "HOME" ) + "\\." + name ) )
 //                     file = env( "HOME" ) + "\\." + name;
 // #endif
 // 		    }
@@ -1440,7 +1410,7 @@ string tns::tnsnames( string filename )
     }
     else
     {
-        if ( exists( filename ) )
+        if ( ::exists( filename ) )
             tnsnames_ = filename;
         else
             throw exp ( "File [" + filename + "] not found!", EXP_MISSING );
@@ -1458,7 +1428,7 @@ string tns::sqlnet( string filename )
     }
     else
     {
-        if ( exists( filename ) )
+        if ( ::exists( filename ) )
             sqlnet_ = filename;
         else
             throw exp ( "File [" + filename + "] not found!", EXP_MISSING );
@@ -1476,7 +1446,7 @@ string tns::ldap( string filename )
     }
     else
     {
-        if ( exists( filename ) )
+        if ( ::exists( filename ) )
             ldap_ = filename;
         else
             throw exp ( "File [" + filename + "] not found!", EXP_MISSING );

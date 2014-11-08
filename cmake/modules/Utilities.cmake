@@ -23,6 +23,8 @@
 #
 ################################################################################
 
+cmake_policy(VERSION 2.8)
+
 # This utility macro determines whether a particular string value
 # occurs within a list of strings:
 #

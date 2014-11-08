@@ -19,6 +19,7 @@
 
 //
 #include "tns2ldif.h"
+#include "bak.h"
 #include "opt.h"
 #include "exp.h"
 
@@ -43,6 +44,7 @@ void usage()
     cout << "   [-b | --base]   <val> : Base DN for LDIF output\n";
     cout << "   [-f | --format] <val> : LDIF output type, add|mod\n";
     cout << "   [-n | --nosort]       : Do not sort entries, before outputting results\n";
+    cout << "   [-k | --nobackup]     : Do not backup output file name if it already exists\n";
     cout << "   [-? | --help]         : Show the utility help and usage\n";
     cout << "\n";
 }
@@ -75,6 +77,7 @@ app::app( int c, char** v ) : tns_( new mti::tns() ),
                               tnsfile_( "" ),
                               format_( "" ),
                               sort_( true ),
+                              backup_( true ),
                               ok_( false )
 {
     ok_ = options( c, v );
@@ -104,6 +107,10 @@ int app::run()
         //
         if ( ldpfile_ != "-" )
         {
+            //
+            if ( backup_ )
+                bak bak( ldpfile_ );
+
             fil.open( ldpfile_.c_str() );
 
             if ( fil.is_open() )
@@ -245,6 +252,12 @@ bool app::options( int c, char** v )
             sort_ = true;
 
         //
+        if ( ops >> OptionPresent( 'k', "nobackup" ) )
+            backup_ = false;
+        else
+            backup_ = true;
+
+        //
         vector<string> opt;
         ops >> GlobalOption( opt );
 
@@ -263,13 +276,13 @@ bool app::options( int c, char** v )
     }
     catch ( TooManyOptionsEx& ex )
     {
-        cerr << "Too many options specified!\n";
+        cerr << "Too many options specified! " << ex.what() << endl;
         usage();
         return false;
     }
     catch ( GetOptEx& ex )
     {
-        cerr << "Invalid or missing option!\n";
+        cerr << "Invalid or missing option! " << ex.what() << endl;
         usage();
         return false;
     }

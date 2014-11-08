@@ -19,6 +19,7 @@
 
 //
 #include "ldif2tns.h"
+#include "bak.h"
 #include "opt.h"
 
 //
@@ -36,6 +37,7 @@ void usage()
     cout << "options:\n";
     cout << "    -l | --ldif    <val> : The LDIF file location\n";
     cout << "   [-n | --nosort]       : Do not sort entries, before outputting results\n";
+    cout << "   [-k | --nobackup]     : Do not backup output file name if it already exists\n";
     cout << "   [-? | --help]         : Show the utility help and usage\n";
     cout << "\n";
 }
@@ -67,6 +69,7 @@ app::app( int c, char** v ) : tns_( new mti::tns() ),
                               tnsfile_( "" ),
                               ldpfile_( "" ),
                               sort_( true ),
+                              backup_( true ),
                               ok_( false )
 {
     ok_ = options( c, v );
@@ -96,6 +99,10 @@ int app::run()
             //
             if ( tnsfile_ != "-" )
             {
+                //
+                if ( backup_ )
+                    bak bak( tnsfile_ );
+
                 fil.open( tnsfile_.c_str() );
             
                 if ( fil.is_open() )
@@ -135,10 +142,8 @@ int app::run()
                 {
                     tnsfile << "# " << (*i).name << endl;
                     tnsfile << tns_->pretty( *i ) << endl;
+                    tnsfile << endl;
                 }
-
-                //
-                tnsfile << endl;
 
                 //
                 cout << "Processed " << ent.size() << " item(s)\n";
@@ -189,6 +194,12 @@ bool app::options( int c, char** v )
             sort_ = true;
 
         //
+        if ( ops >> OptionPresent( 'k', "nobackup" ) )
+            backup_ = false;
+        else
+            backup_ = true;
+
+        //
         vector<string> opt;
         ops >> GlobalOption( opt );
 
@@ -207,13 +218,13 @@ bool app::options( int c, char** v )
     }
     catch ( TooManyOptionsEx& ex )
     {
-        cerr << "Too many options specified!\n";
+        cerr << "Too many options specified! " << ex.what() << endl;
         usage();
         return false;
     }
     catch ( GetOptEx& ex )
     {
-        cerr << "Invalid or missing option!\n";
+        cerr << "Invalid or missing option! " << ex.what() << endl;
         usage();
         return false;
     }

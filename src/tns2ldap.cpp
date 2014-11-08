@@ -410,13 +410,13 @@ bool app::options( int c, char** v )
     }
     catch ( TooManyOptionsEx& ex )
     {
-        cerr << "Too many options specified!\n";
+        cerr << "Too many options specified! " << ex.what() << endl;
         usage();
         return false;
     }
     catch ( GetOptEx& ex )
     {
-        cerr << "Invalid or missing option!\n";
+        cerr << "Invalid or missing option! " << ex.what() << endl;
         usage();
         return false;
     }

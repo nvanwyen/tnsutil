@@ -61,6 +61,7 @@ class app
         std::string format_;
         std::string base_;
         bool        sort_;
+        bool        backup_;
 
         //
         mti::tnsnames tns_;

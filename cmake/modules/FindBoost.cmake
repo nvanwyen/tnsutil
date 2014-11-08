@@ -152,6 +152,7 @@
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
+cmake_policy(VERSION 2.8)
 
 #-------------------------------------------------------------------------------
 # Before we go searching, check whether boost-cmake is available, unless the

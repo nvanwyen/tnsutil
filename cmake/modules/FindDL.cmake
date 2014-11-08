@@ -1,3 +1,5 @@
+cmake_policy(VERSION 2.8)
+
 if(DL_INCLUDE_DIR)
   set(DL_FIND_QUIETLY TRUE)
 endif()

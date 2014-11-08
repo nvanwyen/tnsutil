@@ -23,11 +23,13 @@
 #
 ###############################################################################
 
+cmake_policy(VERSION 2.8)
+
 # If ORACLE_HOME not defined, assume Oracle libraries not available
 if(DEFINED ENV{ORACLE_HOME})
 
   set(ORACLE_HOME $ENV{ORACLE_HOME})
-  message(STATUS "ORACLE_HOME=${ORACLE_HOME}")
+  #message(STATUS "ORACLE_HOME=${ORACLE_HOME}")
 
   find_path(ORACLE_INCLUDE_DIR
     NAMES oci.h
@@ -35,7 +37,7 @@ if(DEFINED ENV{ORACLE_HOME})
     ${ORACLE_HOME}/rdbms/public
     ${ORACLE_HOME}/include
     ${ORACLE_HOME}/sdk/include  # Oracle SDK
-    ${ORACLE_HOME}/OCI/include) # Oracle XE on Windows
+    ${ORACLE_HOME}/oci/include) # Oracle XE on Windows
 
   set(ORACLE_OCI_NAMES clntsh libclntsh oci) # Dirty trick might help on OSX, see issues/89
   set(ORACLE_OCCI_NAMES libocci occi oraocci10 oraocci11)
@@ -44,20 +46,21 @@ if(DEFINED ENV{ORACLE_HOME})
   set(ORACLE_LIB_DIR
     ${ORACLE_HOME}
     ${ORACLE_HOME}/lib
+    ${ORACLE_HOME}/lib64
     ${ORACLE_HOME}/sdk/lib       # Oracle SDK
     ${ORACLE_HOME}/sdk/lib/msvc
-    ${ORACLE_HOME}/OCI/lib/msvc) # Oracle XE on Windows
+    ${ORACLE_HOME}/oci/lib/msvc) # Oracle XE on Windows
 
   find_library(ORACLE_OCI_LIBRARY
     NAMES ${ORACLE_OCI_NAMES} PATHS ${ORACLE_LIB_DIR})
-  find_library(ORACLE_OCCI_LIBRARY
-    NAMES ${ORACLE_OCCI_NAMES} PATHS ${ORACLE_LIB_DIR})
+#find_library(ORACLE_OCCI_LIBRARY
+#    NAMES ${ORACLE_OCCI_NAMES} PATHS ${ORACLE_LIB_DIR})
   find_library(ORACLE_NNZ_LIBRARY
     NAMES ${ORACLE_NNZ_NAMES} PATHS ${ORACLE_LIB_DIR})
 
   set(ORACLE_LIBRARY 
     ${ORACLE_OCI_LIBRARY} 
-    ${ORACLE_OCCI_LIBRARY} 
+    #${ORACLE_OCCI_LIBRARY} 
     ${ORACLE_NNZ_LIBRARY})
   
   if(NOT WIN32)

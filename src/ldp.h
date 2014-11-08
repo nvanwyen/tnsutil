@@ -363,6 +363,8 @@ typedef struct ldapmod {
 
 #if !defined(MACOS) && !defined(DOS) && !defined(_WIN32) && !defined(WINSOCK)
 #include <sys/time.h>
+#else
+#include <winsock2.h>
 #endif
 
 //

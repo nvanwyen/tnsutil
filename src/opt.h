@@ -37,6 +37,11 @@ GetOpt_pp: Yet another C++ version of getopt.
 #   define GETOPT_INLINE
 #endif
 
+//
+#if defined(DOS) || defined(WINDOWS) || defined(WIN32) || defined(_WIN32) || defined(WINSOCK)
+#pragma warning( disable : 4290 )
+#endif
+
 namespace GetOpt
 {
 

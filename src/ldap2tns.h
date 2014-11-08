@@ -73,6 +73,7 @@ class app
         std::string sqlnet_;
         //
         bool        sort_;
+        bool        backup_;
 
         //
         mti::tnsnames tns_;
