@@ -216,7 +216,7 @@ else
 fi
 
 color_echo green "Executing CMake targets"
-cmake ..
+cmake -Wno-dev ..
 chkrc $?
 
 cpu_count

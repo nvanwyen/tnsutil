@@ -165,9 +165,19 @@ if(ORACLE_FOUND)
         PROPERTY INCLUDE_DIRECTORIES
         ${ORACLE_INCLUDE_DIR})
 
-   link_directories(${ORACLE_LIBRARY})
-   link_directories(${ORACLE_HOME}/lib ${ORACLE_HOME}/lib64)
-   include_directories(${ORACLE_INCLUDE_DIR})
+    # on windows add the msvc directory
+    if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows" )
+
+        link_directories(${ORACLE_HOME}/sdk/lib/msvc)
+        include_directories(${ORACLE_HOME}/sdk/include)
+
+    else()
+
+        link_directories(${ORACLE_LIBRARY})
+        link_directories(${ORACLE_HOME}/lib ${ORACLE_HOME}/lib64)
+        include_directories(${ORACLE_INCLUDE_DIR})
+
+    endif()
 
 else()
 
@@ -188,10 +198,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 #
 link_directories("${Boost_LIBRARY_DIRS}")
 include_directories("${Boost_INCLUDE_DIRS}")
-
-#
-include_directories("${ORACLE_INCLUDE_DIR}")
-link_directories(${ORACLE_LIBRARY})
 
 # other
 if ( CMAKE_COMPILER_IS_GNUCXX )
@@ -228,7 +234,7 @@ file(GLOB TNS2LDIF_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.h"
 add_executable(tns2ldif ${TNS2LDIF_SOURCE_FILES})
 #
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows" )
-    target_link_libraries(tns2ldif oci ociw32)
+    target_link_libraries(tns2ldif oci.lib ociw32.lib)
 else()
     target_link_libraries(tns2ldif clntsh)
 endif()
@@ -260,7 +266,7 @@ file(GLOB LDIF2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.h"
 add_executable(ldif2tns ${LDIF2TNS_SOURCE_FILES})
 #
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows" )
-    target_link_libraries(ldif2tns oci ociw32)
+    target_link_libraries(ldif2tns oci.lib ociw32.lib)
 else()
     target_link_libraries(ldif2tns clntsh)
 endif()
@@ -292,7 +298,7 @@ file(GLOB TNS2LDAP_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.h"
 add_executable(tns2ldap ${TNS2LDAP_SOURCE_FILES})
 #
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows" )
-    target_link_libraries(tns2ldap oci ociw32)
+    target_link_libraries(tns2ldap oci.lib ociw32.lib)
 else()
     target_link_libraries(tns2ldap clntsh)
 endif()
@@ -324,7 +330,7 @@ file(GLOB LDAP2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.h"
 add_executable(ldap2tns ${LDAP2TNS_SOURCE_FILES})
 #
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows" )
-    target_link_libraries(ldap2tns oci ociw32)
+    target_link_libraries(ldap2tns oci.lib ociw32.lib)
 else()
     target_link_libraries(ldap2tns clntsh)
 endif()

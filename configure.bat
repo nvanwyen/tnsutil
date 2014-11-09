@@ -28,7 +28,7 @@ cd %ldir%\build
 for /F "delims=" %%i in ('dir /b') do (rmdir "%%i" /s /q || del "%%i" /s /q)
 
 :: run cmake
-cmake ..
+cmake -Wno-dev ..
 
 :: check return code
 if not errorlevel 0 goto failure
