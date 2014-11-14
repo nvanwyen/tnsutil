@@ -1095,7 +1095,7 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                         else
                         {
                             //
-                            char* obv[] = { "top", "orclService", "orclContainer", "orclNetService", NULL };
+                            char* obv[] = { "top", "orclService", "orclNetService", NULL };
                             char* cnv[] = { NULL, NULL };
                             char* nsv[] = { NULL, NULL };
 

@@ -1,23 +1,32 @@
-/*
-GetOpt_pp: Yet another C++ version of getopt.
-    This file is part of GetOpt_pp.
-    
-    Copyright (C) Daniel Gutson, FuDePAN 2007-2010
-    Distributed under the Boost Software License, Version 1.0.
-    (See accompanying file LICENSE_1_0.txt in the root directory or 
-    copy at http://www.boost.org/LICENSE_1_0.txt)
-    
-    GetOpt_pp IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
-    SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
-    FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
-    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.
-*/
+//
+// opt.h
+// ~~~~~~~~~~~~~~~~~~~~~
+//
+// Copyright (c) 2004-2013 Metasystems Technologies Inc. (MTI)
+// All rights reserved
+//
+// Distributed under the MTI Software License, Version 0.1.
+//
+// as defined by accompanying file MTI-LICENSE-0.1.info or
+// at http://www.mtihq.com/license/MTI-LICENSE-0.1.info
+//
+// forked from Yet another C++ version of getopt
+//
+//  Copyright (C) Daniel Gutson, FuDePAN 2007-2010
+//  Distributed under the Boost Software License, Version 1.0.
+//  (See accompanying file LICENSE_1_0.txt in the root directory or 
+//  copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+//  opt IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+//  SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+//  FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+//  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//  DEALINGS IN THE SOFTWARE.
 
-#ifndef GETOPT_PP_H
-#define GETOPT_PP_H
+#ifndef __OPT_H
+#define __OPT_H
 
 #include <string>
 #include <vector>   // candidate to be removed
@@ -33,18 +42,13 @@ GetOpt_pp: Yet another C++ version of getopt.
         - EASY to extend
 */
 
-#ifndef GETOPT_INLINE
-#   define GETOPT_INLINE
+#ifndef OPT_INLINE
+#   define OPT_INLINE
 #endif
+
+namespace mti {
 
 //
-#if defined(DOS) || defined(WINDOWS) || defined(WIN32) || defined(_WIN32) || defined(WINSOCK)
-#pragma warning( disable : 4290 )
-#endif
-
-namespace GetOpt
-{
-
 struct Token
 {
     enum Type
@@ -507,14 +511,14 @@ protected:
     }
 };
 
-class GetOptEx : public std::exception {};
-struct ParsingErrorEx : GetOptEx {};
-struct InvalidFormatEx : GetOptEx {};
-struct ArgumentNotFoundEx : GetOptEx {};
-struct TooManyArgumentsEx : GetOptEx {};
-struct OptionNotFoundEx : GetOptEx {};
-struct TooManyOptionsEx : GetOptEx {};
-struct OptionsFileNotFoundEx : GetOptEx
+class optex : public std::exception {};
+struct ParsingErrorEx : optex {};
+struct InvalidFormatEx : optex {};
+struct ArgumentNotFoundEx : optex {};
+struct TooManyArgumentsEx : optex {};
+struct OptionNotFoundEx : optex {};
+struct TooManyOptionsEx : optex {};
+struct OptionsFileNotFoundEx : optex
 {
     const std::string targetFile;
     OptionsFileNotFoundEx(const std::string& file) : targetFile(file) {}
@@ -526,7 +530,7 @@ enum _EnvTag
     Include_Environment
 };
 
-class GetOpt_pp
+class opt
 {
     ShortOptions _shortOps;
     LongOptions _longOps;
@@ -543,20 +547,20 @@ class GetOpt_pp
     public:
         TokensDeleter(Token*& first) : _first(first) {}
 
-        GETOPT_INLINE ~TokensDeleter();
+        OPT_INLINE ~TokensDeleter();
     };
 
     TokensDeleter _tokens_deleter;
 
-    GETOPT_INLINE Token* _add_token(const std::string& value, Token::Type type);
-    GETOPT_INLINE void _init_flags();
-    GETOPT_INLINE void _parse(const std::vector<std::string>& args);
-    GETOPT_INLINE void _parse_env();
-    static GETOPT_INLINE void _argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args);
-    GETOPT_INLINE void _parse_sub_file(const std::string& file);
+    OPT_INLINE Token* _add_token(const std::string& value, Token::Type type);
+    OPT_INLINE void _init_flags();
+    OPT_INLINE void _parse(const std::vector<std::string>& args);
+    OPT_INLINE void _parse_env();
+    static OPT_INLINE void _argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args);
+    OPT_INLINE void _parse_sub_file(const std::string& file);
 public:
-    GETOPT_INLINE GetOpt_pp(int argc, const char* const* const argv);
-    GETOPT_INLINE GetOpt_pp(int argc, const char* const* const argv, _EnvTag);
+    OPT_INLINE opt(int argc, const char* const* const argv);
+    OPT_INLINE opt(int argc, const char* const* const argv, _EnvTag);
 
     std::ios_base::iostate exceptions() const
     {
@@ -576,9 +580,9 @@ public:
         return _last == _Option::OK;
     }
 
-    GETOPT_INLINE bool options_remain() const;
+    OPT_INLINE bool options_remain() const;
 
-    void end_of_options() const throw(GetOptEx)
+    void end_of_options() const throw(optex)
     {
         if (options_remain() && (_exc & std::ios_base::eofbit))
             throw TooManyOptionsEx();
@@ -598,13 +602,13 @@ public:
         return _app_name;
     }
 
-    GETOPT_INLINE GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
+    OPT_INLINE opt& operator >> (const _Option& opt) throw(optex);
 
-    GETOPT_INLINE GetOpt_pp& operator >> (std::ios_base& (*iomanip)(std::ios_base&));
+    OPT_INLINE opt& operator >> (std::ios_base& (*iomanip)(std::ios_base&));
 
     // Alternative to manipulators, for those who don't like them: the 'getopt' method :)
     // Combination 1: with long option:
-    template <class T> inline T getopt(char short_opt, const std::string& long_opt) throw(GetOptEx)
+    template <class T> inline T getopt(char short_opt, const std::string& long_opt) throw(optex)
     {
         T result;
         operator >> (Option(short_opt, long_opt, result));
@@ -619,7 +623,7 @@ public:
     }
 
     // Combination 2: without long option:
-    template <class T> inline T getopt(char short_opt) throw(GetOptEx)
+    template <class T> inline T getopt(char short_opt) throw(optex)
     {
         T result;
         operator >> (Option(short_opt, result));
@@ -637,28 +641,28 @@ public:
     {
         ShortOptions::const_iterator short_iter;
         LongOptions::const_iterator  long_iter;
-        GetOpt_pp* getopt_pp;
+        opt* optpp;
     };
 
     template <class Container, class Adapter, class OptionType>
     class _iterator
     {
         typename Container::const_iterator _it;
-        GetOpt_pp* _getopt_pp;
+        opt* _optpp;
     public:
         _iterator(const ItCtorData& ctor_data)
         {
             _it = Adapter::adapt(ctor_data);
-            _getopt_pp = ctor_data.getopt_pp;
+            _optpp = ctor_data.optpp;
         }
 
-        _iterator() : _getopt_pp(NULL)
+        _iterator() : _optpp(NULL)
         {}
 
         _iterator<Container, Adapter, OptionType>& operator = (const _iterator<Container, Adapter, OptionType>& other)
         {
             _it = other._it;
-            _getopt_pp = other._getopt_pp;
+            _optpp = other._optpp;
             return *this;
         }
 
@@ -683,10 +687,10 @@ public:
         }
 
         template <class T>
-        GetOpt_pp& operator >> (T& t)
+        opt& operator >> (T& t)
         {
-            Adapter::extract(t, *_getopt_pp, option());
-            return *_getopt_pp;
+            Adapter::extract(t, *_optpp, option());
+            return *_optpp;
         }
     };
 
@@ -695,7 +699,7 @@ public:
         ItCtorData ret;
         ret.short_iter = _shortOps.begin();
         ret.long_iter  = _longOps.begin();
-        ret.getopt_pp  = this;
+        ret.optpp  = this;
         return ret;
     }
 
@@ -704,7 +708,7 @@ public:
         ItCtorData ret;
         ret.short_iter = _shortOps.end();
         ret.long_iter  = _longOps.end();
-        ret.getopt_pp  = this;
+        ret.optpp  = this;
         return ret;
     }
 
@@ -716,9 +720,9 @@ public:
         }
 
         template <class T>
-        static void extract(T& t, GetOpt_pp& getopt_pp, char option)
+        static void extract(T& t, opt& optpp, char option)
         {
-            getopt_pp >> Option(option, t);
+            optpp >> Option(option, t);
         }
     };
 
@@ -730,9 +734,9 @@ public:
         }
 
         template <class T>
-        static void extract(T& t, GetOpt_pp& getopt_pp, const std::string& option)
+        static void extract(T& t, opt& optpp, const std::string& option)
         {
-            getopt_pp >> Option('\0', option, t);
+            optpp >> Option('\0', option, t);
         }
     };
 
@@ -745,6 +749,6 @@ class Environment
     // Coming soon!
 };
 
-}
+} // mti
 
 #endif

@@ -205,10 +205,9 @@ int app::run()
 bool app::options( int c, char** v )
 {
     using namespace std;
-    using namespace GetOpt;
 
     //
-    GetOpt_pp ops( c, v );
+    opt ops( c, v );
     ops.exceptions_all();
 
     //
@@ -414,7 +413,7 @@ bool app::options( int c, char** v )
         usage();
         return false;
     }
-    catch ( GetOptEx& ex )
+    catch ( optex& ex )
     {
         cerr << "Invalid or missing option! " << ex.what() << endl;
         usage();

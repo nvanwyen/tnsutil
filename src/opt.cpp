@@ -1,20 +1,29 @@
-/*
-GetOpt_pp: Yet another C++ version of getopt.
-    This file is part of GetOpt_pp.
-
-    Copyright (C) Daniel Gutson, FuDePAN 2007-2010
-    Distributed under the Boost Software License, Version 1.0.
-    (See accompanying file LICENSE_1_0.txt in the root directory or 
-    copy at http://www.boost.org/LICENSE_1_0.txt)
-    
-    GetOpt_pp IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
-    SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
-    FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
-    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.
-*/
+//
+// opt.cpp
+// ~~~~~~~~~~~~~~~~~~~~~
+//
+// Copyright (c) 2004-2013 Metasystems Technologies Inc. (MTI)
+// All rights reserved
+//
+// Distributed under the MTI Software License, Version 0.1.
+//
+// as defined by accompanying file MTI-LICENSE-0.1.info or
+// at http://www.mtihq.com/license/MTI-LICENSE-0.1.info
+//
+// forked from Yet another C++ version of getopt
+//
+//  Copyright (C) Daniel Gutson, FuDePAN 2007-2010
+//  Distributed under the Boost Software License, Version 1.0.
+//  (See accompanying file LICENSE_1_0.txt in the root directory or 
+//  copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+//  opt IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+//  SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+//  FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+//  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//  DEALINGS IN THE SOFTWARE.
 
 #include <fstream>
 
@@ -30,10 +39,10 @@ GetOpt_pp: Yet another C++ version of getopt.
 
 #include "opt.h"
 
-namespace GetOpt
-{
+namespace mti {
 
-GETOPT_INLINE Token* GetOpt_pp::_add_token(const std::string& value, Token::Type type)
+//
+OPT_INLINE Token* opt::_add_token(const std::string& value, Token::Type type)
 {
     Token* const ret = new Token(value, type);
     if (_first_token == NULL)
@@ -44,13 +53,13 @@ GETOPT_INLINE Token* GetOpt_pp::_add_token(const std::string& value, Token::Type
     return ret;
 }
 
-GETOPT_INLINE void GetOpt_pp::_init_flags()
+OPT_INLINE void opt::_init_flags()
 {
     std::stringstream ss;
     _flags = ss.flags();
 }
 
-GETOPT_INLINE void GetOpt_pp::_parse_sub_file(const std::string& file)
+OPT_INLINE void opt::_parse_sub_file(const std::string& file)
 {
     std::ifstream ifile(file.c_str());
     if (!ifile)
@@ -65,7 +74,7 @@ GETOPT_INLINE void GetOpt_pp::_parse_sub_file(const std::string& file)
     _parse(args);
 }
 
-GETOPT_INLINE void GetOpt_pp::_parse(const std::vector<std::string>& args)
+OPT_INLINE void opt::_parse(const std::vector<std::string>& args)
 {
     bool any_option_processed = false;
     const size_t argc = args.size();
@@ -146,7 +155,7 @@ GETOPT_INLINE void GetOpt_pp::_parse(const std::vector<std::string>& args)
     _last = _Option::OK;    // TODO: IMPROVE!!
 }
 
-GETOPT_INLINE void GetOpt_pp::_parse_env()
+OPT_INLINE void opt::_parse_env()
 {
     // this will be optimized in version 3
     std::string var_name;
@@ -181,13 +190,13 @@ GETOPT_INLINE void GetOpt_pp::_parse_env()
 }
 
 
-GETOPT_INLINE void GetOpt_pp::_argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args)
+OPT_INLINE void opt::_argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args)
 {
     for (int i = 0; i < argc; i++)
         args.push_back(argv[i]);
 }
 
-GETOPT_INLINE GetOpt_pp::TokensDeleter::~TokensDeleter()
+OPT_INLINE opt::TokensDeleter::~TokensDeleter()
 {
     Token* next;
     Token* current(_first);
@@ -199,7 +208,7 @@ GETOPT_INLINE GetOpt_pp::TokensDeleter::~TokensDeleter()
     }
 }
 
-GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv)
+OPT_INLINE opt::opt(int argc, const char* const* const argv)
     : _exc(std::ios_base::goodbit), _first_token(NULL), _last_token(NULL), _tokens_deleter(_first_token)
 {
     _init_flags();
@@ -208,7 +217,7 @@ GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv)
     _parse(args);
 }
 
-GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv, _EnvTag)
+OPT_INLINE opt::opt(int argc, const char* const* const argv, _EnvTag)
     : _first_token(NULL), _last_token(NULL), _tokens_deleter(_first_token)
 {
     _init_flags();
@@ -218,7 +227,7 @@ GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv, _Env
     _parse_env();
 }
 
-GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw(GetOptEx)
+OPT_INLINE opt& opt::operator >> (const _Option& opt) throw(optex)
 {
     if (_last != _Option::ParsingError)
     {
@@ -262,7 +271,7 @@ GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw(GetOp
     return *this;
 }
 
-GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (std::ios_base & (*iomanip)(std::ios_base&))
+OPT_INLINE opt& opt::operator >> (std::ios_base & (*iomanip)(std::ios_base&))
 {
     std::stringstream ss;
     ss.flags(_flags);
@@ -270,7 +279,7 @@ GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (std::ios_base & (*iomanip)(std:
     return *this;
 }
 
-GETOPT_INLINE bool GetOpt_pp::options_remain() const
+OPT_INLINE bool opt::options_remain() const
 {
     bool remain = false;
     ShortOptions::const_iterator it = _shortOps.begin();
@@ -304,4 +313,4 @@ GETOPT_INLINE bool GetOpt_pp::options_remain() const
     return remain;
 }
 
-}
+} // mti

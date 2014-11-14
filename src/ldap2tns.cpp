@@ -47,7 +47,7 @@ void usage()
     cout << "    -l | --ldap &  <val> : The ldap.ora file\n";
     cout << "    -s | --sqlnet] <val> : The sqlnet.ora file\n";
     cout << "   [-n | --nosort]       : Do not sort entries, before outputting results\n";
-    cout << "   [-k | --nobackup]     : Do not backup output file name if it already exists\n";
+    cout << "   [-k | --nobackup]     : Do not backup output file name\n";
     cout << "   [-? | --help]         : Show the utility help and usage\n";
     cout << "\n";
 }
@@ -226,10 +226,9 @@ int app::run()
 bool app::options( int c, char** v )
 {
     using namespace std;
-    using namespace GetOpt;
 
     //
-    GetOpt_pp ops( c, v );
+    opt ops( c, v );
     ops.exceptions_all();
 
     //
@@ -421,7 +420,7 @@ bool app::options( int c, char** v )
         usage();
         return false;
     }
-    catch ( GetOptEx& ex )
+    catch ( optex& ex )
     {
         cerr << "Invalid or missing option! " << ex.what() << endl;
         usage();

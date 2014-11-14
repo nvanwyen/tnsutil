@@ -44,7 +44,7 @@ void usage()
     cout << "   [-b | --base]   <val> : Base DN for LDIF output\n";
     cout << "   [-f | --format] <val> : LDIF output type, add|mod\n";
     cout << "   [-n | --nosort]       : Do not sort entries, before outputting results\n";
-    cout << "   [-k | --nobackup]     : Do not backup output file name if it already exists\n";
+    cout << "   [-k | --nobackup]     : Do not backup output file name\n";
     cout << "   [-? | --help]         : Show the utility help and usage\n";
     cout << "\n";
 }
@@ -152,7 +152,6 @@ int app::run()
                 // objectclasses
                 ldif << "objectclass: top" << endl;
                 ldif << "objectclass: orclService" << endl;
-                ldif << "objectclass: orclContainer" << endl;
                 ldif << "objectclass: orclNetService" << endl;
 
                 // attributes
@@ -182,10 +181,9 @@ int app::run()
 bool app::options( int c, char** v )
 {
     using namespace std;
-    using namespace GetOpt;
 
     //
-    GetOpt_pp ops( c, v );
+    opt ops( c, v );
     ops.exceptions_all();
 
     //
@@ -280,7 +278,7 @@ bool app::options( int c, char** v )
         usage();
         return false;
     }
-    catch ( GetOptEx& ex )
+    catch ( optex& ex )
     {
         cerr << "Invalid or missing option! " << ex.what() << endl;
         usage();
