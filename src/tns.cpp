@@ -55,6 +55,7 @@
                                         "(objectclass=orclNetServiceAlias))"
 // (|(|(objectclass=orclNetService)(objectclass=orclService))(objectclass=orclNetServiceAlias))
 
+#define LDAP_ORCLNETDESCNAME        "000:cn=DESCRIPTION_0"
 
 //
 #ifndef ETC_DIR
@@ -1049,17 +1050,21 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                             if ( repl )
                             {
                                 char* nsv[] = { NULL, NULL };
+                                char* nnv[] = { NULL, NULL };
 
                                 //
                                 nsv[ 0 ] = (char*)::malloc( sizeof( char ) * ( ent.desc.length() + 1 ) );
+                                nnv[ 0 ] = (char*)::malloc( sizeof( char ) * ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
                                 //
                                 ::memset( nsv[ 0 ], 0, sizeof(char) * ( ent.desc.length() + 1 ) );
                                 ::memcpy( nsv[ 0 ], ent.desc.c_str(), ( ent.desc.length() + 1 ) );
+                                ::memcpy( nnv[ 0 ], string( LDAP_ORCLNETDESCNAME ).c_str(), ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
 
                                 LDAPMod ns;
+                                LDAPMod nn;
 
                                 //
-                                LDAPMod* mod[ 2 ] = { NULL, NULL };
+                                LDAPMod* mod[ 3 ] = { NULL, NULL, NULL };
 
                                 //
                                 ns.mod_op     = LDAP_MOD_REPLACE;
@@ -1067,8 +1072,14 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                                 ns.mod_values = nsv;
 
                                 //
+                                nn.mod_op     = LDAP_MOD_REPLACE;
+                                nn.mod_type   = "orclNetDescName";
+                                nn.mod_values = nnv;
+
+                                //
                                 mod[ 0 ] = &ns;
-                                mod[ 1 ] = NULL;
+                                mod[ 1 ] = &nn;
+                                mod[ 2 ] = NULL;
 
                                 //
                                 try
@@ -1079,11 +1090,13 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
 
                                     //
                                     if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
+                                    if ( nnv[ 0 ] ) ::free( nnv[ 0 ] );
                                 }
                                 catch ( exp& )
                                 {
                                     //
                                     if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
+                                    if ( nnv[ 0 ] ) ::free( nnv[ 0 ] );
 
                                     //
                                     throw;
@@ -1098,26 +1111,31 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                             char* obv[] = { "top", "orclService", "orclNetService", NULL };
                             char* cnv[] = { NULL, NULL };
                             char* nsv[] = { NULL, NULL };
+                            char* nnv[] = { NULL, NULL };
 
                             //
                             cnv[ 0 ] = (char*)::malloc( sizeof( char ) * ( ent.name.length() + 1 ) );
                             nsv[ 0 ] = (char*)::malloc( sizeof( char ) * ( ent.desc.length() + 1 ) );
+                            nnv[ 0 ] = (char*)::malloc( sizeof( char ) * ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
 
                             //
                             ::memset( cnv[ 0 ], 0, sizeof(char) * ( ent.name.length() + 1 ) );
                             ::memset( nsv[ 0 ], 0, sizeof(char) * ( ent.desc.length() + 1 ) );
+                            ::memset( nnv[ 0 ], 0, sizeof(char) * ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
 
                             //
                             ::memcpy( cnv[ 0 ], ent.name.c_str(), ( ent.name.length() + 1 ) );
                             ::memcpy( nsv[ 0 ], ent.desc.c_str(), ( ent.desc.length() + 1 ) );
+                            ::memcpy( nnv[ 0 ], string( LDAP_ORCLNETDESCNAME ).c_str(), ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
 
                             //
                             LDAPMod ob;
                             LDAPMod cn;
                             LDAPMod ns;
+                            LDAPMod nn;
 
                             //
-                            LDAPMod* mod[ 4 ] = { NULL, NULL, NULL, NULL };
+                            LDAPMod* mod[ 5 ] = { NULL, NULL, NULL, NULL, NULL };
 
                             //
                             ob.mod_op     = LDAP_MOD_ADD;
@@ -1135,10 +1153,16 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                             ns.mod_values = nsv;
 
                             //
+                            nn.mod_op     = LDAP_MOD_ADD;
+                            nn.mod_type   = "orclNetDescName";
+                            nn.mod_values = nnv;
+
+                            //
                             mod[ 0 ] = &ob;
                             mod[ 1 ] = &cn;
                             mod[ 2 ] = &ns;
-                            mod[ 3 ] = NULL;
+                            mod[ 3 ] = &nn;
+                            mod[ 4 ] = NULL;
 
                             //
                             try
@@ -1150,12 +1174,14 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                                 //
                                 if ( cnv[ 0 ] ) ::free( cnv[ 0 ] );
                                 if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
+                                if ( nnv[ 0 ] ) ::free( nnv[ 0 ] );
                             }
                             catch ( exp& )
                             {
                                 //
                                 if ( cnv[ 0 ] ) ::free( cnv[ 0 ] );
                                 if ( nsv[ 0 ] ) ::free( nsv[ 0 ] );
+                                if ( nnv[ 0 ] ) ::free( nnv[ 0 ] );
 
                                 //
                                 throw;

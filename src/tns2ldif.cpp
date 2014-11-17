@@ -156,6 +156,8 @@ int app::run()
 
                 // attributes
                 ldif << "cn: " << (*i).name << endl;
+                //
+                ldif << "orclNetDescName: "   << "000:cn=DESCRIPTION_0" << endl;
                 ldif << "orclNetDescString: " << (*i).desc << endl;
 
                 //
