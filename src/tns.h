@@ -19,6 +19,7 @@
 // c++
 #include <string>
 #include <vector>
+#include <algorithm>
 
 // boost
 #include <boost/shared_ptr.hpp>
@@ -27,6 +28,8 @@
 // local
 #include "exp.h"
 #include "uri.h"
+
+#define ORACLECONTEXT "cn=OracleContext"
 
 //
 typedef struct ldap LDAP;
@@ -124,28 +127,17 @@ class tns
             //
             public:
                 //
-                string host;
-                int    port;
-                int    pssl;
-                string root;
-                //
-                bool   secure;
-                //
-                string dn;
-                string pw;
-        
-                //
                 store()
-                    : host( "" ), port( 0 ), pssl( 0 ), secure( false ), root( "" ) {}
+                    : host_( "" ), port_( 0 ), pssl_( 0 ), secure_( false ), root_( "" ) { normalize(); }
         
                 store( string h, int p )
-                    : host( h ),  port( p ), pssl( 0 ), secure( false ), root( "" ) {}
+                    : host_( h ),  port_( p ), pssl_( 0 ), secure_( false ), root_( "" ) { normalize(); }
         
                 store( string h, int p, bool s )
-                    : host( h ),  port( p ), pssl( 0 ), secure( s ),     root( "" ) {}
+                    : host_( h ),  port_( p ), pssl_( 0 ), secure_( s ),     root_( "" ) { normalize(); }
         
                 store( string h, int p, bool s, string r )
-                    : host( h ),  port( p ), pssl( 0 ), secure( s ),     root( r )  {}
+                    : host_( h ),  port_( p ), pssl_( 0 ), secure_( s ),     root_( r )  { normalize(); }
         
                 //
                 store( string u ) { url( u ); }
@@ -159,12 +151,12 @@ class tns
                     uri i( u ); 
         
                     //
-                    host = i.host();
-                    port = i.port();
+                    host_ = i.host();
+                    port_ = i.port();
         
                     //
                     if ( i.protocol().substr( i.protocol().length() - 1 ) == "s" )
-                        secure = true;
+                        secure_ = true;
                 }
         
                 //
@@ -177,15 +169,15 @@ class tns
                         throw exp( "Invalid ldap store object!", EXP_INVALID );
         
                     //
-                    u = ( ( secure ) ? "ldaps" : "ldap" ) 
+                    u = ( ( secure_ ) ? "ldaps" : "ldap" ) 
                            + string( "://" ) 
-                           + host;
+                           + host_;
         
                     //
-                    if ( ! ( ( secure && ( port == 636 ) ) || ( ! secure && ( port == 389 ) ) ) )
+                    if ( ! ( ( secure_ && ( port_ == 636 ) ) || ( ! secure_ && ( port_ == 389 ) ) ) )
                     {
                         u += string( ":" ) 
-                           + boost::lexical_cast<string>( port );
+                           + boost::lexical_cast<string>( port_ );
                     }
         
                     return u;
@@ -194,11 +186,69 @@ class tns
                 //
                 bool ok()
                 {
-                    return ( ( host.length() > 0 ) && ( port > 0 ) );
+                    return ( ( host_.length() > 0 ) && ( port_ > 0 ) );
                 }
+
+                // get
+                string host()   { return host_; }
+                int    port()   { return port_; }
+                int    pssl()   { return pssl_; }
+                string root()   { return root_; }
+                //
+                bool   secure() { return secure_; }
+                //
+                string dn()     { return dn_; }
+                string pw()     { return pw_; }
+
+                // set
+                void host( string x ) { host_ = x; }
+                void port( int    x ) { port_ = x; }
+                void pssl( int    x ) { pssl_ = x; }
+                void root( string x ) { root_ = x; normalize(); }
+                //
+                void secure( bool x ) { secure_ = x; }
+                //
+                void dn( string x )   { dn_ = x; }
+                void pw( string x )   { pw_ = x; }
 
             protected:
             private:
+                //
+                string host_;
+                int    port_;
+                int    pssl_;
+                string root_;
+                //
+                bool   secure_;
+                //
+                string dn_;
+                string pw_;
+
+                //
+                string lcase( string str )
+                {
+                    transform( str.begin(), str.end(),str.begin(), ::tolower );
+                    return str;
+                }
+
+                //
+                void normalize()
+                {
+                    std::string r( root_ );
+                    std::string c( ORACLECONTEXT );
+
+                    //
+                    if ( r.length() > 0 )
+                    {
+                        //
+                        if ( lcase( r ).substr( 0, c.length() ) != lcase( c ) )
+                            r = c + "," + r;
+                    }
+                    else
+                        r = ORACLECONTEXT;
+
+                    root_ = r;
+                }
         };
         
         //

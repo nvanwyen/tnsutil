@@ -133,6 +133,12 @@ int app::run()
         //
         if ( opn )
         {
+            //
+            tns::store sto;
+
+            sto.root( base_ );
+            base_ = sto.root(); // normialize base
+
             // header
             ldif << "# Source:  " << tnsfile_ << endl;
             ldif << "# Created: " << now() << endl;
@@ -224,8 +230,6 @@ bool app::options( int c, char** v )
             //
             ops >> Option( 'b', "base",  base_ );
         }
-        else
-            base_ = "cn=OracleContext";
 
         //
         if ( ops >> OptionPresent( 'f', "format" ) )

@@ -42,7 +42,7 @@ void usage()
     cout << "   [-u | --url|    <val> : Use the LDAP Url string as ldap[s]://<host>:<port>\n";
     cout << "    -h | --host &  <val> : LDAP server host or IP\n";
     cout << "    -p | --port]   <val> : LDAP server port number\n";
-    cout << "   [-b | --base]   <val> : Base (parent) entry where entries are managed\n";
+    cout << "   [-b | --base]   <val> : Base (realm) entry where entries are managed\n";
     cout << "   [-a | --admin|  <val> : Location of the TNS_ADMIN directory\n";
     cout << "    -l | --ldap &  <val> : The ldap.ora file\n";
     cout << "    -s | --sqlnet] <val> : The sqlnet.ora file\n";
@@ -113,8 +113,8 @@ int app::run()
         if ( ( host_.length() > 0 ) && ( port_ > 0 ) )
         {
             //
-            sto.host = host_;
-            sto.port = port_;
+            sto.host( host_ );
+            sto.port( port_ );
         }
         else
         {
@@ -145,11 +145,11 @@ int app::run()
     {
         //
         if ( dn_.length() > 0 )
-            sto.dn = dn_;
+            sto.dn( dn_ );
 
         //
         if ( pw_.length() > 0 )
-            sto.pw = pw_;
+            sto.pw( pw_ );
 
         //
         tns_->ldapstore( sto );

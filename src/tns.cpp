@@ -659,9 +659,9 @@ tns::store tns::resolve_directory()
                         {
                             string dat = buf.substr( lpos + 1, rpos - ( lpos + 1 ) );
 
-                            store_.host = split( dat, 0, ":" );
-                            store_.port = ::atoi( split( dat, 1, ":" ).c_str() );
-                            store_.pssl = ::atoi( split( dat, 2, ":" ).c_str() );
+                            store_.host( split( dat, 0, ":" ) );
+                            store_.port( ::atoi( split( dat, 1, ":" ).c_str() ) );
+                            store_.pssl( ::atoi( split( dat, 2, ":" ).c_str() ) );
                         }
                     }
                 }
@@ -676,7 +676,7 @@ tns::store tns::resolve_directory()
                         size_t rpos = buf.find_first_of( "\"", lpos + 1 );
 
                         if ( rpos != string::npos )
-                            store_.root = trim( buf.substr( lpos + 1, rpos - ( lpos + 1 ) ) );
+                            store_.root( trim( buf.substr( lpos + 1, rpos - ( lpos + 1 ) ) ) );
                     }
                 }
 
@@ -731,7 +731,7 @@ size_t tns::load_ldap()
                 url = store_.url();
 
                 //
-                if ( ( ld = ::ldap_init( (char*)store_.host.c_str(), store_.port ) ) != NULL )
+                if ( ( ld = ::ldap_init( (char*)store_.host().c_str(), store_.port() ) ) != NULL )
                 {
                     // use the first element for sorting
                     const char* attrs[]  = { ATTR_VAL_CN, ATTR_VAL_DESC, ATTR_VAL_ALIAS, NULL };
@@ -740,19 +740,19 @@ size_t tns::load_ldap()
                     LDAPMessage* res     = NULL;
 
                     //
-                    if ( store_.dn.length() > 0 )
+                    if ( store_.dn().length() > 0 )
                     {
-                        dn = (char*)::malloc( sizeof( char ) * ( store_.dn.length() + 1 ) );
-                        ::memset( dn, 0, sizeof(char) * ( store_.dn.length() + 1 ) );
-                        ::memcpy( dn, store_.dn.c_str(), ( store_.dn.length() + 1 ) );
+                        dn = (char*)::malloc( sizeof( char ) * ( store_.dn().length() + 1 ) );
+                        ::memset( dn, 0, sizeof(char) * ( store_.dn().length() + 1 ) );
+                        ::memcpy( dn, store_.dn().c_str(), ( store_.dn().length() + 1 ) );
                     }
 
                     //
-                    if ( store_.pw.length() > 0 )
+                    if ( store_.pw().length() > 0 )
                     {
-                        pw = (char*)::malloc( sizeof( char ) * ( store_.pw.length() + 1 ) );
-                        ::memset( pw, 0, sizeof(char) * ( store_.pw.length() + 1 ) );
-                        ::memcpy( pw, store_.pw.c_str(), ( store_.pw.length() + 1 ) );
+                        pw = (char*)::malloc( sizeof( char ) * ( store_.pw().length() + 1 ) );
+                        ::memset( pw, 0, sizeof(char) * ( store_.pw().length() + 1 ) );
+                        ::memcpy( pw, store_.pw().c_str(), ( store_.pw().length() + 1 ) );
                     }
 
                     //
@@ -761,7 +761,7 @@ size_t tns::load_ldap()
 
                     //
                     if ( ( rc = ::ldap_search_ext_s( ld,
-                                                     (char*)((store_.root.length() == 0 ) ? "" : store_.root.c_str()),
+                                                     (char*)((store_.root().length() == 0 ) ? "" : store_.root().c_str()),
                                                      LDAP_SCOPE_SUBTREE,
                                                      (char*)filter,
                                                      (char**)attrs,
@@ -1016,24 +1016,24 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                 url = store_.url();
 
                 //
-                if ( ( ld = ::ldap_init( (char*)store_.host.c_str(), store_.port ) ) != NULL )
+                if ( ( ld = ::ldap_init( (char*)store_.host().c_str(), store_.port() ) ) != NULL )
                 {
-                    string rdn = "cn=" + ent.name + "," + store_.root;
+                    string rdn = "cn=" + ent.name + "," + store_.root();
 
                     //
-                    if ( store_.dn.length() > 0 )
+                    if ( store_.dn().length() > 0 )
                     {
-                        dn = (char*)::malloc( sizeof( char ) * ( store_.dn.length() + 1 ) );
-                        ::memset( dn, 0, sizeof(char) * ( store_.dn.length() + 1 ) );
-                        ::memcpy( dn, store_.dn.c_str(), ( store_.dn.length() + 1 ) );
+                        dn = (char*)::malloc( sizeof( char ) * ( store_.dn().length() + 1 ) );
+                        ::memset( dn, 0, sizeof(char) * ( store_.dn().length() + 1 ) );
+                        ::memcpy( dn, store_.dn().c_str(), ( store_.dn().length() + 1 ) );
                     }
 
                     //
-                    if ( store_.pw.length() > 0 )
+                    if ( store_.pw().length() > 0 )
                     {
-                        pw = (char*)::malloc( sizeof( char ) * ( store_.pw.length() + 1 ) );
-                        ::memset( pw, 0, sizeof(char) * ( store_.pw.length() + 1 ) );
-                        ::memcpy( pw, store_.pw.c_str(), ( store_.pw.length() + 1 ) );
+                        pw = (char*)::malloc( sizeof( char ) * ( store_.pw().length() + 1 ) );
+                        ::memset( pw, 0, sizeof(char) * ( store_.pw().length() + 1 ) );
+                        ::memcpy( pw, store_.pw().c_str(), ( store_.pw().length() + 1 ) );
                     }
 
                     //
@@ -1041,7 +1041,7 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                         throw exp ( "LDAP bind failed: " + string( ::ldap_err2string( rc ) ), rc );
 
                     //
-                    if ( ldap_exists( ld, (char*)store_.root.c_str() ) )
+                    if ( ldap_exists( ld, (char*)store_.root().c_str() ) )
                     {
                         //
                         if ( ldap_exists( ld, (char*)rdn.c_str() ) )
@@ -1058,7 +1058,8 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                                 //
                                 ::memset( nsv[ 0 ], 0, sizeof(char) * ( ent.desc.length() + 1 ) );
                                 ::memcpy( nsv[ 0 ], ent.desc.c_str(), ( ent.desc.length() + 1 ) );
-                                ::memcpy( nnv[ 0 ], string( LDAP_ORCLNETDESCNAME ).c_str(), ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
+                                ::memcpy( nnv[ 0 ], string( LDAP_ORCLNETDESCNAME ).c_str(), 
+                                                  ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
 
                                 LDAPMod ns;
                                 LDAPMod nn;
@@ -1126,7 +1127,8 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                             //
                             ::memcpy( cnv[ 0 ], ent.name.c_str(), ( ent.name.length() + 1 ) );
                             ::memcpy( nsv[ 0 ], ent.desc.c_str(), ( ent.desc.length() + 1 ) );
-                            ::memcpy( nnv[ 0 ], string( LDAP_ORCLNETDESCNAME ).c_str(), ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
+                            ::memcpy( nnv[ 0 ], string( LDAP_ORCLNETDESCNAME ).c_str(), 
+                                              ( string( LDAP_ORCLNETDESCNAME ).length() + 1 ) );
 
                             //
                             LDAPMod ob;
@@ -1189,7 +1191,7 @@ bool tns::save_ldap( entry& ent, bool repl /*= true*/ )
                         }
                     }
                     else
-                        throw exp ( "LDAP base entry does not exist [" + store_.root + "]", EXP_EXISTS );
+                        throw exp ( "LDAP base entry does not exist [" + store_.root() + "]", EXP_EXISTS );
                 }
                 else
                 {
