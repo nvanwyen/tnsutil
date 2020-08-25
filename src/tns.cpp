@@ -267,6 +267,18 @@ tns::entry tns::resolve( string name, string desc )
 }
 
 //
+size_t tns::load_tnsnames( std::string file )
+{
+    //
+    if ( ! ::exists( file ) )
+        throw exp ( "TNS*Names file [" + file + "] not found!", EXP_MISSING );
+
+    //
+    tnsnames_ = file;
+    return load_tnsnames();
+}
+
+//
 tns::entry& tns::find( string ent )
 {
     //

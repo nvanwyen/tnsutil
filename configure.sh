@@ -2,7 +2,7 @@
 
 #
 proj="TNS*Util"
-tgts="bin/tns2ldif bin/ldif2tns bin/tns2ldap bin/ldap2tns"
+tgts="bin/tns2ldif bin/ldif2tns bin/tns2ldap bin/ldap2tns bin/tnsformat"
 dels="src/ver.h"
 
 #

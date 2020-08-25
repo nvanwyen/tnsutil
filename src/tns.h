@@ -254,6 +254,9 @@ class tns
         //
         store resolve_directory();
 
+        //
+        size_t load_tnsnames( std::string file );
+
     protected:
     private:
         //

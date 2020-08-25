@@ -227,7 +227,7 @@ OPT_INLINE opt::opt(int argc, const char* const* const argv, _EnvTag)
     _parse_env();
 }
 
-OPT_INLINE opt& opt::operator >> (const _Option& opt) throw(optex)
+OPT_INLINE opt& opt::operator >> (const _Option& opt) // throw(optex)
 {
     if (_last != _Option::ParsingError)
     {

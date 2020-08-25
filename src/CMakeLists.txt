@@ -208,7 +208,7 @@ endif()
 #
 colormsg(HIBLUE "Configuring TNS2LDIF source files")
 file(GLOB TNS2LDIF_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldif.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.cpp"
@@ -242,7 +242,7 @@ endif()
 #
 colormsg(HIBLUE "Configuring LDIF2TNS source files")
 file(GLOB LDIF2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/ldif2tns.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.cpp"
@@ -274,7 +274,7 @@ endif()
 #
 colormsg(HIBLUE "Configuring TNS2LDAP source files")
 file(GLOB TNS2LDAP_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/tns2ldap.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.cpp"
@@ -306,7 +306,7 @@ endif()
 #
 colormsg(HIBLUE "Configuring LDAP2TNS source files")
 file(GLOB LDAP2TNS_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/ldap2tns.cpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.h"
          "${CMAKE_CURRENT_SOURCE_DIR}/uri.cpp"
@@ -336,8 +336,39 @@ else()
 endif()
 
 #
+colormsg(HIBLUE "Configuring TNSFORMAT source files")
+file(GLOB TNSFORMAT_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tnsformat.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/tnsformat.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/utl.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/ver.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/ver.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/tns.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/tns.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/ldp.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/ldp.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/env.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/env.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/bak.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/bak.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/opt.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/bak.h"
+         "${CMAKE_CURRENT_SOURCE_DIR}/bak.cpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/exp.h")
+
+#
+add_executable(tnsformat ${TNSFORMAT_SOURCE_FILES})
+#
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows" )
+    target_link_libraries(tnsformat oci.lib ociw32.lib)
+else()
+    target_link_libraries(tnsformat clntsh)
+endif()
+
+#
 colormsg(HIBLUE "Configuring target installation destination")
-install(TARGETS tns2ldif DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-install(TARGETS ldif2tns DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-install(TARGETS tns2ldap DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-install(TARGETS ldap2tns DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+install(TARGETS tns2ldif  DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+install(TARGETS ldif2tns  DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+install(TARGETS tns2ldap  DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+install(TARGETS ldap2tns  DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+install(TARGETS tnsformat DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
